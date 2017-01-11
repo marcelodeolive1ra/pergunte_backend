@@ -25,7 +25,7 @@ SECRET_KEY = 'gpitn+4cqrp53=*gc#3rq8bkb-en!ntle@8y)+m^rrrk3t)e+s'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['mds.secompufscar.com.br', '127.0.0.1']
 
 
 # Application definition
