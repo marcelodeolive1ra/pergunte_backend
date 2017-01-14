@@ -1,10 +1,7 @@
-from django.shortcuts import render
-from .models import Pessoa, Professor, Aluno, Materia
+from .models import Professor, Aluno, Materia
 from django.http import JsonResponse
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core import serializers
-
 
 def index(request):
     return HttpResponse("Home")
@@ -103,10 +100,27 @@ def getMaterias(request):
 
         if tipoUsuario == 'aluno':
             aluno = Aluno.objects.get(email=email)
-            materias = aluno.materias.all()
+
+            materias = []
+
+            for materia in aluno.materias.all().order_by("-ano").order_by("-semestre").order_by("nomeDisciplina"):
+                materias.append({
+                    'ano': materia.ano,
+                    'semestre': materia.semestre,
+                    'turma': materia.turma,
+                    'nome_materia': materia.nomeDisciplina,
+                    'codigo_inscricao': materia.codigoInscricao,
+                    'professor': {
+                        'nome': materia.professor.nome,
+                        'sobrenome': materia.professor.sobrenome,
+                        'email': materia.professor.email,
+                        'universidade': materia.professor.universidade
+                    }
+                })
+
             return JsonResponse({
                 'status': 'ok',
-                'materias': serializers.serialize('json', materias)
+                'materias': materias
             })
         else:
             return JsonResponse({
