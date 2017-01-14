@@ -19,9 +19,8 @@ class Pergunta(models.Model):
         verbose_name_plural = 'Perguntas'
 
     def __str__(self):
-        return str(self.codigo) + ' ' + self.pergunta
+        return self.pergunta
 
-    codigo = models.IntegerField(verbose_name='Código', unique=True)
     pergunta = models.TextField(verbose_name='Texto da Pergunta')
     alternativas = models.ManyToManyField(Alternativa, verbose_name='Alternativas')
     disponivel = models.BooleanField(verbose_name='Pergunta disponível?')
@@ -54,14 +53,14 @@ class Materia(models.Model):
         verbose_name_plural = 'Matérias'
 
     def __str__(self):
-        return self.nomeDisciplina + '(' + str(self.ano) + '/' + str(self.semestre) + ')'
+        return self.nomeDisciplina + ' (' + str(self.ano) + '/' + str(self.semestre) + ')'
 
     ano = models.IntegerField(verbose_name='Ano')
     semestre = models.IntegerField(verbose_name='Semestre')
     nomeDisciplina = models.CharField(max_length=200, verbose_name='Nome da disciplina')
     codigoInscricao = models.CharField(max_length=30, verbose_name='Código de inscrição', unique=True)
-    professor = models.ManyToManyField(Professor, verbose_name='Professor(a)')
-    perguntas = models.ManyToManyField(Pergunta, verbose_name='Perguntas')
+    professor = models.ForeignKey(Professor, verbose_name='Professor(a)')
+    perguntas = models.ManyToManyField(Pergunta, verbose_name='Perguntas', blank=True)
 
 
 class Aluno(Pessoa):
@@ -73,4 +72,4 @@ class Aluno(Pessoa):
         return '[Aluno] ' + self.nome + ' ' + self.sobrenome
 
     curso = models.CharField(max_length=100, verbose_name='Curso')
-    materias = models.ManyToManyField(Materia, verbose_name='Matérias inscritas')
+    materias = models.ManyToManyField(Materia, verbose_name='Matérias inscritas', blank=True)
