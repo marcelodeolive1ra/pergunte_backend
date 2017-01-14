@@ -57,6 +57,7 @@ class Materia(models.Model):
 
     ano = models.IntegerField(verbose_name='Ano')
     semestre = models.IntegerField(verbose_name='Semestre')
+    turma = models.CharField(max_length=1, verbose_name='Turma')
     nomeDisciplina = models.CharField(max_length=200, verbose_name='Nome da disciplina')
     codigoInscricao = models.CharField(max_length=30, verbose_name='Código de inscrição', unique=True)
     professor = models.ForeignKey(Professor, verbose_name='Professor(a)')
