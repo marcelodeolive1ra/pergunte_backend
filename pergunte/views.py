@@ -147,6 +147,7 @@ def getMateriaPorQRCode(request):
                 'ano': materia.ano,
                 'semestre': materia.semestre,
                 'nome_materia': materia.nomeDisciplina,
+                'codigo_inscricao': materia.codigoInscricao,
                 'professor': materia.professor.nome + ' ' + materia.professor.sobrenome
             })
         else:
@@ -159,4 +160,38 @@ def getMateriaPorQRCode(request):
         return JsonResponse({
             'status': 'error',
             'descricao': 'Requisição sem código.'
+        })
+
+
+@csrf_exempt
+def cadastrarMateria(request):
+    if request.method == 'POST':
+        ano = request.POST['ano']
+        semestre = request.POST['semestre']
+        turma = request.POST['turma']
+        nomeDisciplina = request.POST['nome_disciplina']
+        codigoInscricao = request.POST['codigo_inscricao']
+
+        email_professor = request.POST['email']
+
+        try:
+            professor = Professor.objects.get(email=email_professor)
+        except:
+            return JsonResponse({
+                'status': 'error',
+                'descricao': 'Professor não cadastrado.'
+            })
+
+        nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nomeDisciplina=nomeDisciplina,
+                               codigoInscricao=codigoInscricao, professor=professor)
+
+        nova_materia.save()
+
+        return JsonResponse({
+            'status': 'ok'
+        })
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'descricao': 'Requisição sem e-mail'
         })
