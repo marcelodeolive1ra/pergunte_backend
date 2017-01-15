@@ -105,6 +105,7 @@ def getMaterias(request):
 
             for materia in aluno.materias.all().order_by("-ano").order_by("-semestre").order_by("nomeDisciplina"):
                 materias.append({
+                    'codigo': materia.id,
                     'ano': materia.ano,
                     'semestre': materia.semestre,
                     'turma': materia.turma,
@@ -145,6 +146,7 @@ def getMateriaPorQRCode(request):
             return JsonResponse({
                 'status': 'ok',
                 'ano': materia.ano,
+                'codigo': materia.id,
                 'semestre': materia.semestre,
                 'nome_materia': materia.nomeDisciplina,
                 'codigo_inscricao': materia.codigoInscricao,
@@ -190,6 +192,32 @@ def cadastrarMateria(request):
         return JsonResponse({
             'status': 'ok'
         })
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'descricao': 'Requisição sem e-mail'
+        })
+
+
+@csrf_exempt
+def cancelarInscricaoEmMateria(request):
+    if request.method == 'POST':
+        email_aluno = request.POST['email']
+        codigo_materia = request.POST['codigo']
+        try:
+            aluno = Aluno.objects.get(email=email_aluno)
+            materia = Materia.objects.get(id=codigo_materia)
+            aluno.materias.remove(materia)
+            aluno.save()
+
+            return JsonResponse({
+                'status': 'ok',
+            })
+        except:
+            return JsonResponse({
+                'status': 'error',
+                'descricao': 'Aluno ou matéria inválidos.'
+            })
     else:
         return JsonResponse({
             'status': 'error',
