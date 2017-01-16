@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'^buscarmateriaporqr/', views.getMateriaPorQRCode, name='getmateriasporqr'),
     url(r'^cadastrarmateria/', views.cadastrarMateria, name='cadastrarmateria'),
     url(r'^cancelarinscricaoemmateria/', views.cancelarInscricaoEmMateria, name='cancelarinscricaoemmateria'),
+    url(r'^inscreveralunoemmateria/', views.inscreverAlunoEmMateria, name='inscreveralunoemmateria'),
 ]

@@ -150,7 +150,12 @@ def getMateriaPorQRCode(request):
                 'semestre': materia.semestre,
                 'nome_materia': materia.nomeDisciplina,
                 'codigo_inscricao': materia.codigoInscricao,
-                'professor': materia.professor.nome + ' ' + materia.professor.sobrenome
+                'professor': {
+                        'nome': materia.professor.nome,
+                        'sobrenome': materia.professor.sobrenome,
+                        'email': materia.professor.email,
+                        'universidade': materia.professor.universidade
+                    }
             })
         else:
             return JsonResponse({
@@ -212,6 +217,32 @@ def cancelarInscricaoEmMateria(request):
 
             return JsonResponse({
                 'status': 'ok',
+            })
+        except:
+            return JsonResponse({
+                'status': 'error',
+                'descricao': 'Aluno ou matéria inválidos.'
+            })
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'descricao': 'Requisição sem e-mail'
+        })
+
+@csrf_exempt
+def inscreverAlunoEmMateria(request):
+    if request.method == 'POST':
+        email_aluno = request.POST['email']
+        codigo_inscricao = request.POST['codigo']
+
+        try:
+            aluno = Aluno.objects.get(email=email_aluno)
+            materia = Materia.objects.get(codigoInscricao=codigo_inscricao)
+            aluno.materias.add(materia)
+            aluno.save()
+
+            return JsonResponse({
+                'status': 'ok'
             })
         except:
             return JsonResponse({
