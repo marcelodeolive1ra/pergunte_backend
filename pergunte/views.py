@@ -103,7 +103,7 @@ def getMaterias(request):
 
             materias = []
 
-            for materia in aluno.materias.all().order_by("-ano").order_by("-semestre").order_by("nomeDisciplina"):
+            for materia in aluno.materias.all().order_by("nomeDisciplina").order_by("-semestre").order_by("-ano"):
                 materias.append({
                     'codigo': materia.id,
                     'ano': materia.ano,
@@ -229,6 +229,7 @@ def cancelarInscricaoEmMateria(request):
             'descricao': 'Requisição sem e-mail'
         })
 
+
 @csrf_exempt
 def inscreverAlunoEmMateria(request):
     if request.method == 'POST':
@@ -249,6 +250,39 @@ def inscreverAlunoEmMateria(request):
                 'status': 'error',
                 'descricao': 'Aluno ou matéria inválidos.'
             })
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'descricao': 'Requisição sem e-mail'
+        })
+
+@csrf_exempt
+def buscarPerfilUsuario(request):
+    if request.method == 'POST':
+        email = request.POST['email']
+
+        try:
+            usuario = Aluno.objects.get(email=email)
+            perfil = "aluno"
+        except:
+            try:
+                usuario = Professor.objects.get(email=email)
+                perfil = "professor"
+            except:
+                return JsonResponse({
+                    'status': 'error',
+                    'descricao': 'Perfil não encontrado.'
+                })
+
+        return JsonResponse({
+            'status': 'ok',
+            'perfil': perfil,
+            'nome': usuario.nome,
+            'sobrenome': usuario.sobrenome,
+            'curso' if perfil == 'aluno' else 'universidade': usuario.curso if perfil == 'aluno' else usuario.universidade,
+            'email': usuario.email
+        })
+
     else:
         return JsonResponse({
             'status': 'error',
