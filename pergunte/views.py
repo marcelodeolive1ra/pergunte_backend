@@ -95,6 +95,25 @@ def cadastrarProfessor(request):
 @csrf_exempt
 def getMaterias(request):
     if request.method == 'POST':
+        try:
+            statusMateria = request.POST['status_materia']
+
+            if statusMateria == 'inativa':
+                return getMateriasPorStatus(request, False)
+            else:
+                return getMateriasPorStatus(request, True)
+        except:
+            return JsonResponse({'status': 'error',
+                                 'descricao': 'Erro ao obter lista de matérias.'})
+
+    else:
+        return JsonResponse({'status': 'error',
+                             'descricao': 'Requisição sem parâmetros.'})
+
+
+@csrf_exempt
+def getMateriasPorStatus(request, statusMateria):
+    if request.method == 'POST':
         email = request.POST['email']
         tipoUsuario = request.POST['tipo']
 
@@ -103,7 +122,7 @@ def getMaterias(request):
 
             materias = []
 
-            for materia in aluno.materias.all().order_by("nomeDisciplina").order_by("-semestre").order_by("-ano"):
+            for materia in aluno.materias.filter(materiaAtiva=statusMateria).order_by("nomeDisciplina").order_by("-semestre").order_by("-ano"):
                 materias.append({
                     'codigo': materia.id,
                     'ano': materia.ano,
@@ -143,21 +162,40 @@ def getMateriaPorQRCode(request):
 
         if materiaExistente:
             materia = materia[0]
-            return JsonResponse({
-                'status': 'ok',
-                'ano': materia.ano,
-                'turma': materia.turma,
-                'codigo': materia.id,
-                'semestre': materia.semestre,
-                'nome_materia': materia.nomeDisciplina,
-                'codigo_inscricao': materia.codigoInscricao,
-                'professor': {
+
+            if materia.materiaAtiva:
+                return JsonResponse({
+                    'status': 'ok',
+                    'ano': materia.ano,
+                    'turma': materia.turma,
+                    'codigo': materia.id,
+                    'semestre': materia.semestre,
+                    'nome_materia': materia.nomeDisciplina,
+                    'codigo_inscricao': materia.codigoInscricao,
+                    'professor': {
+                            'nome': materia.professor.nome,
+                            'sobrenome': materia.professor.sobrenome,
+                            'email': materia.professor.email,
+                            'universidade': materia.professor.universidade
+                        }
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'descricao': 'Esta matéria está atualmente inativa.',
+                    'ano': materia.ano,
+                    'turma': materia.turma,
+                    'codigo': materia.id,
+                    'semestre': materia.semestre,
+                    'nome_materia': materia.nomeDisciplina,
+                    'codigo_inscricao': materia.codigoInscricao,
+                    'professor': {
                         'nome': materia.professor.nome,
                         'sobrenome': materia.professor.sobrenome,
                         'email': materia.professor.email,
                         'universidade': materia.professor.universidade
                     }
-            })
+                })
         else:
             return JsonResponse({
                 'status': 'error',
@@ -222,7 +260,9 @@ def cancelarInscricaoEmMateria(request):
         except:
             return JsonResponse({
                 'status': 'error',
-                'descricao': 'Aluno ou matéria inválidos.'
+                'descricao': 'Aluno ou matéria inválidos.',
+                'email': email_aluno,
+                'codigo_materia': codigo_materia,
             })
     else:
         return JsonResponse({
@@ -243,6 +283,7 @@ def inscreverAlunoEmMateria(request):
             aluno.materias.add(materia)
             aluno.save()
 
+            # TODO Tratar erro de quando a matéria já está cadastrada para este usuário
             return JsonResponse({
                 'status': 'ok',
                 'ano': materia.ano,

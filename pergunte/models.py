@@ -62,6 +62,7 @@ class Materia(models.Model):
     codigoInscricao = models.CharField(max_length=30, verbose_name='Código de inscrição', unique=True)
     professor = models.ForeignKey(Professor, verbose_name='Professor(a)')
     perguntas = models.ManyToManyField(Pergunta, verbose_name='Perguntas', blank=True)
+    materiaAtiva = models.BooleanField(verbose_name='Matéria ativa?', default=True)
 
 
 class Aluno(Pessoa):
