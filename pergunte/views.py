@@ -155,53 +155,68 @@ def getMateriasPorStatus(request, statusMateria):
 def getMateriaPorQRCode(request):
     if request.method == 'POST':
         codigo = request.POST['codigo']
+        email_aluno = request.POST['email']
 
-        materia = Materia.objects.filter(codigoInscricao=codigo)
+        try:
+            aluno = Aluno.objects.get(email=email_aluno)
+            inscricaoJaExistente = True if len(aluno.materias.filter(codigoInscricao=codigo)) > 0 else False
 
-        materiaExistente = True if len(materia) > 0 else False
-
-        if materiaExistente:
-            materia = materia[0]
-
-            if materia.materiaAtiva:
-                return JsonResponse({
-                    'status': 'ok',
-                    'ano': materia.ano,
-                    'turma': materia.turma,
-                    'codigo': materia.id,
-                    'semestre': materia.semestre,
-                    'nome_materia': materia.nomeDisciplina,
-                    'codigo_inscricao': materia.codigoInscricao,
-                    'professor': {
-                            'nome': materia.professor.nome,
-                            'sobrenome': materia.professor.sobrenome,
-                            'email': materia.professor.email,
-                            'universidade': materia.professor.universidade
-                        }
-                })
-            else:
+            if inscricaoJaExistente:
                 return JsonResponse({
                     'status': 'error',
-                    'descricao': 'Esta matéria está atualmente inativa.',
-                    'ano': materia.ano,
-                    'turma': materia.turma,
-                    'codigo': materia.id,
-                    'semestre': materia.semestre,
-                    'nome_materia': materia.nomeDisciplina,
-                    'codigo_inscricao': materia.codigoInscricao,
-                    'professor': {
-                        'nome': materia.professor.nome,
-                        'sobrenome': materia.professor.sobrenome,
-                        'email': materia.professor.email,
-                        'universidade': materia.professor.universidade
-                    }
+                    'descricao': 'Você já está cadastrado nesta matéria.'
                 })
-        else:
+            else:
+                materia = Materia.objects.filter(codigoInscricao=codigo)
+
+                materiaExistente = True if len(materia) > 0 else False
+
+                if materiaExistente:
+                    materia = materia[0]
+
+                    if materia.materiaAtiva:
+                        return JsonResponse({
+                            'status': 'ok',
+                            'ano': materia.ano,
+                            'turma': materia.turma,
+                            'codigo': materia.id,
+                            'semestre': materia.semestre,
+                            'nome_materia': materia.nomeDisciplina,
+                            'codigo_inscricao': materia.codigoInscricao,
+                            'professor': {
+                                'nome': materia.professor.nome,
+                                'sobrenome': materia.professor.sobrenome,
+                                'email': materia.professor.email,
+                                'universidade': materia.professor.universidade
+                            }
+                        })
+                    else:
+                        return JsonResponse({
+                            'status': 'error',
+                            'descricao': 'Esta matéria está atualmente inativa.',
+                            'ano': materia.ano,
+                            'turma': materia.turma,
+                            'codigo': materia.id,
+                            'semestre': materia.semestre,
+                            'nome_materia': materia.nomeDisciplina,
+                            'codigo_inscricao': materia.codigoInscricao,
+                            'professor': {
+                                'nome': materia.professor.nome,
+                                'sobrenome': materia.professor.sobrenome,
+                                'email': materia.professor.email,
+                                'universidade': materia.professor.universidade
+                            }
+                        })
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'descricao': 'Código de inscrição não encontrado.'
+                    })
+        except:
             return JsonResponse({
                 'status': 'error',
-                'descricao': 'Código não encontrado.'
+                'descricao': 'Aluno não encontrado.'
             })
-
     else:
         return JsonResponse({
             'status': 'error',
@@ -215,7 +230,7 @@ def cadastrarMateria(request):
         ano = request.POST['ano']
         semestre = request.POST['semestre']
         turma = request.POST['turma']
-        nomeDisciplina = request.POST['nome_disciplina']
+        nomeDisciplina = request.POST['nome_materia']
         codigoInscricao = request.POST['codigo_inscricao']
 
         email_professor = request.POST['email']
@@ -284,6 +299,7 @@ def inscreverAlunoEmMateria(request):
             aluno.save()
 
             # TODO Tratar erro de quando a matéria já está cadastrada para este usuário
+            # Fazer por segurança, embora método getMateriaPorQRCode já faz essa verificação
             return JsonResponse({
                 'status': 'ok',
                 'ano': materia.ano,
