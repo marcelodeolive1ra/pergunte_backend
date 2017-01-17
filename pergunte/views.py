@@ -146,6 +146,7 @@ def getMateriaPorQRCode(request):
             return JsonResponse({
                 'status': 'ok',
                 'ano': materia.ano,
+                'turma': materia.turma,
                 'codigo': materia.id,
                 'semestre': materia.semestre,
                 'nome_materia': materia.nomeDisciplina,
@@ -243,7 +244,19 @@ def inscreverAlunoEmMateria(request):
             aluno.save()
 
             return JsonResponse({
-                'status': 'ok'
+                'status': 'ok',
+                'ano': materia.ano,
+                'turma': materia.turma,
+                'codigo': materia.id,
+                'semestre': materia.semestre,
+                'nome_materia': materia.nomeDisciplina,
+                'codigo_inscricao': materia.codigoInscricao,
+                'professor': {
+                    'nome': materia.professor.nome,
+                    'sobrenome': materia.professor.sobrenome,
+                    'email': materia.professor.email,
+                    'universidade': materia.professor.universidade
+                }
             })
         except:
             return JsonResponse({
