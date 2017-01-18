@@ -6,90 +6,134 @@ from django.views.decorators.csrf import csrf_exempt
 def index(request):
     return HttpResponse("Home")
 
+OK = 'ok'
+ERRO = 'error'
+STATUS = 'status'
+DESCRICAO = 'descricao'
+REQUISICAO_GET = 'Requisição GET ao invés de requisição POST.'
+REQUISICAO_OK = {'status': 'ok'}
+
+def erro(mensagemDeErro):
+    return {
+        STATUS: ERRO,
+        DESCRICAO: mensagemDeErro
+    }
+
+def dicionario_aluno(aluno):
+    return {
+        STATUS: OK,
+        'nome': aluno.nome,
+        'sobrenome': aluno.sobrenome,
+        'email': aluno.email,
+        'curso': aluno.curso
+    }
+
+
+def dicionario_professor(professor):
+    return {
+        STATUS: OK,
+        'nome': professor.nome,
+        'sobrenome': professor.sobrenome,
+        'email': professor.email,
+        'universidade': professor.universidade
+    }
+
+
+def dicionario_materia(materia):
+    return {
+        STATUS: OK,
+        'codigo': materia.id,
+        'ano': materia.ano,
+        'semestre': materia.semestre,
+        'turma': materia.turma,
+        'nome_materia': materia.nomeDisciplina,
+        'codigo_inscricao': materia.codigoInscricao,
+        'professor': {
+            'nome': materia.professor.nome,
+            'sobrenome': materia.professor.sobrenome,
+            'email': materia.professor.email,
+            'universidade': materia.professor.universidade
+        }
+    }
+
+
+def dicionario_materias(materias):
+    return {
+        STATUS: OK,
+        'materias': materias
+    }
+
+
 @csrf_exempt
 def getAluno(request):
     if request.method == 'POST':
-        email = request.POST['email']
-        aluno = Aluno.objects.filter(email=email)
-
-        encontrado = True if len(aluno) > 0 else False
-
-        if encontrado:
-            aluno = aluno[0]
-            return JsonResponse({'status': 'ok',
-                                 'nome': aluno.nome,
-                                 'sobrenome': aluno.sobrenome,
-                                 'curso': aluno.curso})
-        else:
-            return JsonResponse({'status': 'error',
-                                 'descricao': 'Aluno não encontrado.'})
+        try:
+            email = request.POST['email']
+            aluno = Aluno.objects.get(email=email)
+            return JsonResponse(dicionario_aluno(aluno))
+        except:
+            return JsonResponse(erro("Não foi encontrado aluno com o e-mail informado."))
     else:
-        return JsonResponse({'status': 'error',
-                             'descricao': 'Requisição sem e-mail.'})
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def getProfessor(request):
     if request.method == 'POST':
-        email = request.POST['email']
-        professor = Professor.objects.filter(email=email)
-
-        encontrado = True if len(professor) > 0 else False
-
-        if encontrado:
-            professor = professor[0]
-            return JsonResponse({'status': 'ok',
-                                 'nome': professor.nome,
-                                 'sobrenome': professor.sobrenome,
-                                 'curso': professor.universidade})
-        else:
-            return JsonResponse({'status': 'error',
-                                 'descricao': 'Professor não encontrado.'})
+        try:
+            email = request.POST['email']
+            professor = Professor.objects.get(email=email)
+            return JsonResponse(dicionario_professor(professor))
+        except:
+            return JsonResponse(erro("Não foi encontrado professor com o e-mail informado."))
     else:
-        return JsonResponse({'status': 'error',
-                             'descricao': 'Requisição sem e-mail.'})
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def cadastrarAluno(request):
     if request.method == 'POST':
-        email = request.POST['email']
+        try:
+            email = request.POST['email']
 
-        alunoJaExistente = True if len(Aluno.objects.filter(email=email)) > 0 else False
+            alunoJaExistente = True if len(Aluno.objects.filter(email=email)) > 0 else False
 
-        if alunoJaExistente:
-            return JsonResponse({'status': 'error',
-                                 'descricao': 'Aluno já cadastrado'})
-        else:
-            nome = request.POST['nome']
-            sobrenome = request.POST['sobrenome']
-            curso = request.POST['curso']
-            aluno = Aluno(nome=nome, sobrenome=sobrenome, email=email, curso=curso)
-            aluno.save()
-            return JsonResponse({'status': 'ok'})
+            if alunoJaExistente:
+                return JsonResponse(erro('Aluno com e-mail ' + email + 'já cadastrado.'))
+            else:
+                nome = request.POST['nome']
+                sobrenome = request.POST['sobrenome']
+                curso = request.POST['curso']
+                aluno = Aluno(nome=nome, sobrenome=sobrenome, email=email, curso=curso)
+                aluno.save()
+                return JsonResponse(dicionario_aluno(aluno))
+        except:
+            return JsonResponse(erro('Não foi possível cadastrar o aluno.'))
     else:
-        return JsonResponse({'status': 'error'})
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def cadastrarProfessor(request):
     if request.method == 'POST':
-        email = request.POST['email']
+        try:
+            email = request.POST['email']
 
-        professorJaExistente = True if len(Professor.objects.filter(email=email)) > 0 else False
+            professorJaExistente = True if len(Professor.objects.filter(email=email)) > 0 else False
 
-        if professorJaExistente:
-            return JsonResponse({'status': 'error', 'descricao': 'Professor já cadastrado'})
-        else:
-            nome = request.POST['nome']
-            sobrenome = request.POST['sobrenome']
-            universidade = request.POST['universidade']
-            aluno = Professor(nome=nome, sobrenome=sobrenome, email=email, universidade=universidade)
-            aluno.save()
-            return JsonResponse({'status': 'ok'})
+            if professorJaExistente:
+                return JsonResponse(erro('Professor com e-mail ' + email + 'já cadastrado.'))
+            else:
+                nome = request.POST['nome']
+                sobrenome = request.POST['sobrenome']
+                universidade = request.POST['universidade']
+                professor = Professor(nome=nome, sobrenome=sobrenome, email=email, universidade=universidade)
+                professor.save()
+                return JsonResponse(dicionario_professor(professor))
+        except:
+            return JsonResponse(erro('Não foi possível cadastrar o professor.'))
     else:
-        return JsonResponse({'status': 'error',
-                             'descricao': 'Requisição sem e-mail.'})
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
@@ -99,73 +143,51 @@ def getMaterias(request):
             statusMateria = request.POST['status_materia']
 
             if statusMateria == 'inativa':
-                return getMateriasPorStatus(request, False)
+                return getMateriasPorStatus(request, statusMateria=False)
             else:
-                return getMateriasPorStatus(request, True)
+                return getMateriasPorStatus(request, statusMateria=True)
         except:
-            return JsonResponse({'status': 'error',
-                                 'descricao': 'Erro ao obter lista de matérias.'})
-
+            return JsonResponse(erro('Erro ao obter a lista de matérias.'))
     else:
-        return JsonResponse({'status': 'error',
-                             'descricao': 'Requisição sem parâmetros.'})
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def getMateriasPorStatus(request, statusMateria):
     if request.method == 'POST':
-        email = request.POST['email']
-        tipoUsuario = request.POST['tipo']
+        try:
+            email = request.POST['email']
+            tipoUsuario = request.POST['tipo']
 
-        if tipoUsuario == 'aluno':
-            aluno = Aluno.objects.get(email=email)
+            if tipoUsuario == 'aluno':
+                usuario = Aluno.objects.get(email=email)
+            else:
+                usuario = Professor.objects.get(email=email)
 
             materias = []
 
-            for materia in aluno.materias.filter(materiaAtiva=statusMateria).order_by("nomeDisciplina").order_by("-semestre").order_by("-ano"):
-                materias.append({
-                    'codigo': materia.id,
-                    'ano': materia.ano,
-                    'semestre': materia.semestre,
-                    'turma': materia.turma,
-                    'nome_materia': materia.nomeDisciplina,
-                    'codigo_inscricao': materia.codigoInscricao,
-                    'professor': {
-                        'nome': materia.professor.nome,
-                        'sobrenome': materia.professor.sobrenome,
-                        'email': materia.professor.email,
-                        'universidade': materia.professor.universidade
-                    }
-                })
+            for materia in usuario.materias.filter(materiaAtiva=statusMateria). \
+                    order_by("nomeDisciplina").order_by("-semestre").order_by("-ano"):
+                materias.append(dicionario_materia(materia))
 
-            return JsonResponse({
-                'status': 'ok',
-                'materias': materias
-            })
-        else:
-            return JsonResponse({
-                'status': 'professor'
-            })
+            return JsonResponse(dicionario_materias(materias))
+        except:
+            return JsonResponse(erro('Erro ao obter lista de matérias.'))
     else:
-        return JsonResponse({'status': 'error',
-                             'descricao': 'Requisição sem e-mail.'})
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def getMateriaPorQRCode(request):
     if request.method == 'POST':
-        codigo = request.POST['codigo']
-        email_aluno = request.POST['email']
-
         try:
+            codigo = request.POST['codigo']
+            email_aluno = request.POST['email']
             aluno = Aluno.objects.get(email=email_aluno)
             inscricaoJaExistente = True if len(aluno.materias.filter(codigoInscricao=codigo)) > 0 else False
 
             if inscricaoJaExistente:
-                return JsonResponse({
-                    'status': 'error',
-                    'descricao': 'Você já está cadastrado nesta matéria.'
-                })
+                return JsonResponse(erro('Aluno já inscrito nesta matéria.'))
             else:
                 materia = Materia.objects.filter(codigoInscricao=codigo)
 
@@ -175,124 +197,65 @@ def getMateriaPorQRCode(request):
                     materia = materia[0]
 
                     if materia.materiaAtiva:
-                        return JsonResponse({
-                            'status': 'ok',
-                            'ano': materia.ano,
-                            'turma': materia.turma,
-                            'codigo': materia.id,
-                            'semestre': materia.semestre,
-                            'nome_materia': materia.nomeDisciplina,
-                            'codigo_inscricao': materia.codigoInscricao,
-                            'professor': {
-                                'nome': materia.professor.nome,
-                                'sobrenome': materia.professor.sobrenome,
-                                'email': materia.professor.email,
-                                'universidade': materia.professor.universidade
-                            }
-                        })
+                        return JsonResponse(dicionario_materia(materia))
                     else:
-                        return JsonResponse({
-                            'status': 'error',
-                            'descricao': 'Esta matéria está atualmente inativa.',
-                            'ano': materia.ano,
-                            'turma': materia.turma,
-                            'codigo': materia.id,
-                            'semestre': materia.semestre,
-                            'nome_materia': materia.nomeDisciplina,
-                            'codigo_inscricao': materia.codigoInscricao,
-                            'professor': {
-                                'nome': materia.professor.nome,
-                                'sobrenome': materia.professor.sobrenome,
-                                'email': materia.professor.email,
-                                'universidade': materia.professor.universidade
-                            }
-                        })
+                        return JsonResponse(erro('Esta matéria está atualmente inativa.'))
                 else:
-                    return JsonResponse({
-                        'status': 'error',
-                        'descricao': 'Código de inscrição não encontrado.'
-                    })
+                    return JsonResponse(erro('O código deste QR não foi encontrado no cadastro de matérias.'))
         except:
-            return JsonResponse({
-                'status': 'error',
-                'descricao': 'Aluno não encontrado.'
-            })
+            return JsonResponse(erro('Erro na requisição.'))
     else:
-        return JsonResponse({
-            'status': 'error',
-            'descricao': 'Requisição sem código.'
-        })
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def cadastrarMateria(request):
     if request.method == 'POST':
-        ano = request.POST['ano']
-        semestre = request.POST['semestre']
-        turma = request.POST['turma']
-        nomeDisciplina = request.POST['nome_materia']
-        codigoInscricao = request.POST['codigo_inscricao']
-
-        email_professor = request.POST['email']
-
         try:
-            professor = Professor.objects.get(email=email_professor)
+            ano = request.POST['ano']
+            semestre = request.POST['semestre']
+            turma = request.POST['turma']
+            nomeDisciplina = request.POST['nome_materia']
+            codigoInscricao = request.POST['codigo_inscricao']
+            emailProfessor = request.POST['email']
+
+            try:
+                professor = Professor.objects.get(email=emailProfessor)
+                nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nomeDisciplina=nomeDisciplina,
+                                       codigoInscricao=codigoInscricao, professor=professor)
+                nova_materia.save()
+                return JsonResponse(dicionario_materia(nova_materia))
+            except:
+                return JsonResponse(erro('Professor não cadastrado.'))
         except:
-            return JsonResponse({
-                'status': 'error',
-                'descricao': 'Professor não cadastrado.'
-            })
-
-        nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nomeDisciplina=nomeDisciplina,
-                               codigoInscricao=codigoInscricao, professor=professor)
-
-        nova_materia.save()
-
-        return JsonResponse({
-            'status': 'ok'
-        })
+            return JsonResponse(erro('Erro na requisição.'))
     else:
-        return JsonResponse({
-            'status': 'error',
-            'descricao': 'Requisição sem e-mail'
-        })
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def cancelarInscricaoEmMateria(request):
     if request.method == 'POST':
-        email_aluno = request.POST['email']
-        codigo_materia = request.POST['codigo']
         try:
+            email_aluno = request.POST['email']
+            codigo_materia = request.POST['codigo']
             aluno = Aluno.objects.get(email=email_aluno)
             materia = Materia.objects.get(id=codigo_materia)
             aluno.materias.remove(materia)
             aluno.save()
-
-            return JsonResponse({
-                'status': 'ok',
-            })
+            return JsonResponse(dicionario_materia(materia))
         except:
-            return JsonResponse({
-                'status': 'error',
-                'descricao': 'Aluno ou matéria inválidos.',
-                'email': email_aluno,
-                'codigo_materia': codigo_materia,
-            })
+            return JsonResponse(erro('Erro na requisição. Aluno ou matéria não encontrados.'))
     else:
-        return JsonResponse({
-            'status': 'error',
-            'descricao': 'Requisição sem e-mail'
-        })
+        return JsonResponse(erro(REQUISICAO_GET))
 
 
 @csrf_exempt
 def inscreverAlunoEmMateria(request):
     if request.method == 'POST':
-        email_aluno = request.POST['email']
-        codigo_inscricao = request.POST['codigo']
-
         try:
+            email_aluno = request.POST['email']
+            codigo_inscricao = request.POST['codigo']
             aluno = Aluno.objects.get(email=email_aluno)
             materia = Materia.objects.get(codigoInscricao=codigo_inscricao)
             aluno.materias.add(materia)
@@ -300,61 +263,25 @@ def inscreverAlunoEmMateria(request):
 
             # TODO Tratar erro de quando a matéria já está cadastrada para este usuário
             # Fazer por segurança, embora método getMateriaPorQRCode já faz essa verificação
-            return JsonResponse({
-                'status': 'ok',
-                'ano': materia.ano,
-                'turma': materia.turma,
-                'codigo': materia.id,
-                'semestre': materia.semestre,
-                'nome_materia': materia.nomeDisciplina,
-                'codigo_inscricao': materia.codigoInscricao,
-                'professor': {
-                    'nome': materia.professor.nome,
-                    'sobrenome': materia.professor.sobrenome,
-                    'email': materia.professor.email,
-                    'universidade': materia.professor.universidade
-                }
-            })
+            return JsonResponse(dicionario_materia(materia))
         except:
-            return JsonResponse({
-                'status': 'error',
-                'descricao': 'Aluno ou matéria inválidos.'
-            })
+            return JsonResponse(erro('Erro na requisição. Aluno ou matéria não encontrados.'))
     else:
-        return JsonResponse({
-            'status': 'error',
-            'descricao': 'Requisição sem e-mail'
-        })
+        return JsonResponse(erro(REQUISICAO_GET))
 
 @csrf_exempt
 def buscarPerfilUsuario(request):
     if request.method == 'POST':
-        email = request.POST['email']
 
         try:
-            usuario = Aluno.objects.get(email=email)
-            perfil = "aluno"
+            email = request.POST['email']
+            aluno = Aluno.objects.get(email=email)
+            return JsonResponse(dicionario_aluno(aluno))
         except:
             try:
-                usuario = Professor.objects.get(email=email)
-                perfil = "professor"
+                professor = Professor.objects.get(email=email)
+                return JsonResponse(dicionario_professor(professor))
             except:
-                return JsonResponse({
-                    'status': 'error',
-                    'descricao': 'Perfil não encontrado.'
-                })
-
-        return JsonResponse({
-            'status': 'ok',
-            'perfil': perfil,
-            'nome': usuario.nome,
-            'sobrenome': usuario.sobrenome,
-            'curso' if perfil == 'aluno' else 'universidade': usuario.curso if perfil == 'aluno' else usuario.universidade,
-            'email': usuario.email
-        })
-
+                return JsonResponse(erro('Perfil não encontrado'))
     else:
-        return JsonResponse({
-            'status': 'error',
-            'descricao': 'Requisição sem e-mail'
-        })
+        return JsonResponse(erro(REQUISICAO_GET))
