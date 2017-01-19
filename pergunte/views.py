@@ -159,15 +159,18 @@ def getMateriasPorStatus(request, statusMateria):
             email = request.POST['email']
             tipoUsuario = request.POST['tipo']
 
-            if tipoUsuario == 'aluno':
-                usuario = Aluno.objects.get(email=email)
-            else:
-                usuario = Professor.objects.get(email=email)
-
             materias = []
 
-            for materia in usuario.materias.filter(materiaAtiva=statusMateria). \
-                    order_by("nomeDisciplina").order_by("-semestre").order_by("-ano"):
+            if tipoUsuario == 'aluno':
+                aluno = Aluno.objects.get(email=email)
+                materias_encontradas = aluno.materias.filter(materiaAtiva=statusMateria). \
+                    order_by("nomeDisciplina").order_by("-semestre").order_by("-ano")
+            else:
+                professor = Professor.objects.get(email=email)
+                materias_encontradas = Materia.objects.filter(professor=professor).filter(materiaAtiva=statusMateria).\
+                    order_by("nomeDisciplina").order_by("-semestre").order_by("-ano")
+
+            for materia in materias_encontradas:
                 materias.append(dicionario_materia(materia))
 
             return JsonResponse(dicionario_materias(materias))
@@ -272,7 +275,6 @@ def inscreverAlunoEmMateria(request):
 @csrf_exempt
 def buscarPerfilUsuario(request):
     if request.method == 'POST':
-
         try:
             email = request.POST['email']
             aluno = Aluno.objects.get(email=email)
