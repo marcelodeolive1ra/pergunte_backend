@@ -261,12 +261,17 @@ def inscreverAlunoEmMateria(request):
             codigo_inscricao = request.POST['codigo']
             aluno = Aluno.objects.get(email=email_aluno)
             materia = Materia.objects.get(codigoInscricao=codigo_inscricao)
-            aluno.materias.add(materia)
-            aluno.save()
+
+            if materia.materiaAtiva:
+                aluno.materias.add(materia)
+                aluno.save()
+                return JsonResponse(dicionario_materia(materia))
+            else:
+                return JsonResponse(erro('Não é possível cadastrá-lo nesta matéria, pois ela está inativa.'))
 
             # TODO Tratar erro de quando a matéria já está cadastrada para este usuário
             # Fazer por segurança, embora método getMateriaPorQRCode já faz essa verificação
-            return JsonResponse(dicionario_materia(materia))
+
         except:
             return JsonResponse(erro('Erro na requisição. Aluno ou matéria não encontrados.'))
     else:
@@ -285,5 +290,23 @@ def buscarPerfilUsuario(request):
                 return JsonResponse(dicionario_professor(professor))
             except:
                 return JsonResponse(erro('Perfil não encontrado'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def desativarMateria(request):
+    if request.method == 'POST':
+        try:
+            email_professor = request.POST['email']
+            codigo_materia = request.POST['codigo']
+            professor = Professor.objects.get(email=email_professor)
+            materia = Materia.objects.get(id=codigo_materia)
+            materia.materiaAtiva = False
+            materia.save()
+
+            return JsonResponse(dicionario_materia(materia))
+        except:
+            return JsonResponse(erro('Erro ao desativar matéria.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))

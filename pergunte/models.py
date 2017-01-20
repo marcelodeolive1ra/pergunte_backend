@@ -9,7 +9,7 @@ class Alternativa(models.Model):
         return '[' + self.letra + '] ' + self.textoResposta
 
     letra = models.CharField(max_length=1, verbose_name='alternativa')
-    textoAlternativa = models.TextField(verbose_name='texto da alternativa')
+    textoAlternativa = models.TextField(verbose_name='texto da alternativa', blank=True)
 
 
 class Pergunta(models.Model):
@@ -17,10 +17,7 @@ class Pergunta(models.Model):
         verbose_name = 'pergunta'
         verbose_name_plural = 'perguntas'
 
-    def __str__(self):
-        return self.pergunta
-
-    texto_pergunta = models.TextField(verbose_name='texto da pergunta')
+    texto_pergunta = models.TextField(verbose_name='texto da pergunta', blank=True)
     alternativas = models.ManyToManyField(Alternativa, verbose_name='alternativas')
     disponivel = models.BooleanField(verbose_name='pergunta disponível?')
 
