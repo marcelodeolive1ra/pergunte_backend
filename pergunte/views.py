@@ -164,11 +164,11 @@ def getMateriasPorStatus(request, statusMateria):
             if tipoUsuario == 'aluno':
                 aluno = Aluno.objects.get(email=email)
                 materias_encontradas = aluno.materias.filter(materiaAtiva=statusMateria). \
-                    order_by("nomeDisciplina").order_by("-semestre").order_by("-ano")
+                    order_by('-ano', '-semestre', 'nomeDisciplina')
             else:
                 professor = Professor.objects.get(email=email)
-                materias_encontradas = Materia.objects.filter(professor=professor).filter(materiaAtiva=statusMateria).\
-                    order_by("nomeDisciplina").order_by("-semestre").order_by("-ano")
+                materias_encontradas = Materia.objects.filter(professor=professor).filter(materiaAtiva=statusMateria). \
+                    order_by('-ano', '-semestre', 'nomeDisciplina')
 
             for materia in materias_encontradas:
                 materias.append(dicionario_materia(materia))
