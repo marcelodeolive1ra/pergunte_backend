@@ -17,4 +17,5 @@ urlpatterns = [
     url(r'^buscaralunosinscritospormateria/', views.getAlunosInscritosPorMateria, name='buscaralunosinscritospormateria'),
     url(r'^cadastrarpergunta/', views.cadastrarPergunta, name='cadastrarpergunta'),
     url(r'^buscarperguntaspormateria/', views.getPerguntasPorMateria, name='buscarperguntaspormateria'),
+    url(r'^buscarperguntasporprofessor/', views.getPerguntasPorProfessor, name='buscarperguntasporprofessor'),
 ]

@@ -64,6 +64,26 @@ def dicionario_materia(materia):
     }
 
 
+def dicionario_materias_sem_professor(materia, perguntas):
+    materia_sem_professor = {
+        STATUS: OK,
+        'codigo': materia.id,
+        'ano': materia.ano,
+        'semestre': materia.semestre,
+        'turma': materia.turma,
+        'nome_materia': materia.nomeDisciplina,
+        'codigo_inscricao': materia.codigoInscricao,
+        'perguntas': perguntas
+    }
+
+    dict = {}
+
+    for i in [materia_sem_professor, perguntas]:
+        dict.update(i)
+
+    return dict
+
+
 def dicionario_materias(materias):
     return {
         STATUS: OK,
@@ -93,7 +113,7 @@ def dicionario_pergunta(pergunta):
 
 def dicionario_perguntas(perguntas):
     return {
-        STATUS: OK,
+        # STATUS: OK,
         'perguntas': [dicionario_pergunta(pergunta) for pergunta in perguntas]
     }
 
@@ -427,6 +447,39 @@ def getPerguntasPorMateria(request):
                 return JsonResponse(dicionario_perguntas(perguntas))
             except:
                 return JsonResponse(erro('Erro na requisição. Código de matéria inválido.'))
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getPerguntasPorProfessor(request):
+    if request.method == 'POST':
+        try:
+            email = request.POST['email']
+
+            try:
+                professor = Professor.objects.get(email=email)
+
+                materias = Materia.objects.filter(professor=professor).all()
+
+                materias_perguntas = []
+
+                for materia in materias:
+                    dict = dicionario_materias_sem_professor(materia, dicionario_perguntas(materia.perguntas.all()))
+
+                    materias_perguntas.append({
+                        'materia': dict
+                    })
+
+                return JsonResponse({
+                    STATUS: OK,
+                    'materias': materias_perguntas
+                })
+
+            except:
+                return JsonResponse('Erro na requisição. Professor não encontrado.')
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
     else:
