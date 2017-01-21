@@ -1,15 +1,17 @@
 from django.db import models
 
+
 class Alternativa(models.Model):
     class Meta:
         verbose_name = 'Alternativa'
         verbose_name_plural = 'Alternativas'
 
     def __str__(self):
-        return '[' + self.letra + '] ' + self.textoResposta
+        return '[Alternativa ' + self.letra + '] ' + self.textoAlternativa
 
     letra = models.CharField(max_length=1, verbose_name='alternativa')
     textoAlternativa = models.TextField(verbose_name='texto da alternativa', blank=True)
+    alternativaCorreta = models.BooleanField(verbose_name='alternativa correta?', default=False)
 
 
 class Pergunta(models.Model):
@@ -17,8 +19,12 @@ class Pergunta(models.Model):
         verbose_name = 'pergunta'
         verbose_name_plural = 'perguntas'
 
+    def __str__(self):
+        return '[Pergunta] ' + self.titulo
+
+    titulo = models.CharField(max_length=50, verbose_name='titulo/tag', blank=True)
     texto_pergunta = models.TextField(verbose_name='texto da pergunta', blank=True)
-    alternativas = models.ManyToManyField(Alternativa, verbose_name='alternativas')
+    alternativas = models.ManyToManyField(Alternativa, verbose_name='alternativas', blank=True)
     disponivel = models.BooleanField(verbose_name='pergunta disponível?')
 
 

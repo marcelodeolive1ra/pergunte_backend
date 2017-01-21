@@ -1,4 +1,4 @@
-from .models import Professor, Aluno, Materia
+from .models import *
 from django.http import JsonResponse
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -338,3 +338,44 @@ def desativarMateria(request):
             return JsonResponse(erro('Erro ao desativar matéria.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def cadastrarPergunta(request):
+    if request.method == 'POST':
+        try:
+            email_professor = request.POST['email']
+            titulo = request.POST['titulo']
+            texto_pergunta = request.POST['texto_pergunta']
+            codigo_materia = request.POST['codigo']
+            quantidade_alternativas = int(request.POST['quantidade_alternativas'])
+
+            try:
+                professor = Professor.objects.get(email=email_professor)
+
+                pergunta = Pergunta(titulo=titulo, texto_pergunta=texto_pergunta, disponivel=False)
+                pergunta.save()
+
+                try:
+                    for i in range(0, quantidade_alternativas):
+                        letra_alternativa = request.POST['alternativa' + str(i) + '_letra']
+                        texto_alternativa = request.POST['alternativa' + str(i) + '_texto_alternativa']
+                        alternativa_correta = True if request.POST['alternativa' + str(i) + '_correta'] == 'true' else False
+
+                        alternativa = Alternativa(letra=letra_alternativa, textoAlternativa=texto_alternativa, alternativaCorreta=alternativa_correta)
+                        alternativa.save()
+                        pergunta.alternativas.add(alternativa)
+                        pergunta.save()
+
+                    professor.materia_set.get(id=codigo_materia).perguntas.add(pergunta)
+                    professor.save()
+                except:
+                    return JsonResponse(erro('Erro na requisição. Parâmetros das alternativas inválidos.'))
+                return JsonResponse({'status': 'ok'})
+            except:
+                return JsonResponse(erro('Erro na requisição. Professor(a) não encontrado(a).'))
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
