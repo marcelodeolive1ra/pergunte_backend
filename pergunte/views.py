@@ -70,6 +70,30 @@ def dicionario_materias(materias):
     }
 
 
+def dicionario_alternativa(alternativa):
+    return {
+        STATUS: OK,
+        'letra': alternativa.letra,
+        'texto_alternativa': alternativa.textoAlternativa
+    }
+
+
+def dicionario_pergunta(pergunta):
+    return {
+        STATUS: OK,
+        'codigo': pergunta.id,
+        'titulo': pergunta.titulo,
+        'texto_pergunta': pergunta.texto_pergunta,
+        'alternativas': [dicionario_alternativa(alternativa) for alternativa in pergunta.alternativas.all()],
+        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(alternativaCorreta=True)]
+    }
+
+
+def dicionario_perguntas(perguntas):
+    return {
+        STATUS: OK,
+        'perguntas': [dicionario_pergunta(pergunta) for pergunta in perguntas]
+    }
 
 
 @csrf_exempt
@@ -371,7 +395,7 @@ def cadastrarPergunta(request):
                     professor.save()
                 except:
                     return JsonResponse(erro('Erro na requisição. Parâmetros das alternativas inválidos.'))
-                return JsonResponse({'status': 'ok'})
+                return JsonResponse(REQUISICAO_OK)
             except:
                 return JsonResponse(erro('Erro na requisição. Professor(a) não encontrado(a).'))
         except:
@@ -379,3 +403,21 @@ def cadastrarPergunta(request):
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
+
+@csrf_exempt
+def getPerguntasPorMateria(request):
+    if request.method == 'POST':
+        try:
+            codigo_materia = request.POST['codigo']
+
+            try:
+                materia = Materia.objects.get(id=codigo_materia)
+                perguntas = materia.perguntas.all()
+
+                return JsonResponse(dicionario_perguntas(perguntas))
+            except:
+                return JsonResponse(erro('Erro na requisição. Código de matéria inválido.'))
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
