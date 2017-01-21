@@ -2,6 +2,7 @@ from .models import *
 from django.http import JsonResponse
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+import datetime
 
 def index(request):
     return HttpResponse("Home")
@@ -85,7 +86,8 @@ def dicionario_pergunta(pergunta):
         'titulo': pergunta.titulo,
         'texto_pergunta': pergunta.texto_pergunta,
         'alternativas': [dicionario_alternativa(alternativa) for alternativa in pergunta.alternativas.all()],
-        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(alternativaCorreta=True)]
+        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(alternativaCorreta=True)],
+        'data_aproximada': pergunta.data_aproximada
     }
 
 
@@ -373,11 +375,18 @@ def cadastrarPergunta(request):
             texto_pergunta = request.POST['texto_pergunta']
             codigo_materia = request.POST['codigo']
             quantidade_alternativas = int(request.POST['quantidade_alternativas'])
+            data_aproximada = request.POST['data_aproximada']
+
+            dia = int(data_aproximada[0:2])
+            mes = int(data_aproximada[3:5])
+            ano = int(data_aproximada[6:])
+
+            data_aproximada = datetime.date(ano, mes, dia)
 
             try:
                 professor = Professor.objects.get(email=email_professor)
 
-                pergunta = Pergunta(titulo=titulo, texto_pergunta=texto_pergunta, disponivel=False)
+                pergunta = Pergunta(titulo=titulo, texto_pergunta=texto_pergunta, disponivel=False, data_aproximada=data_aproximada)
                 pergunta.save()
 
                 try:
@@ -393,9 +402,10 @@ def cadastrarPergunta(request):
 
                     professor.materia_set.get(id=codigo_materia).perguntas.add(pergunta)
                     professor.save()
+
+                    return JsonResponse(REQUISICAO_OK)
                 except:
                     return JsonResponse(erro('Erro na requisição. Parâmetros das alternativas inválidos.'))
-                return JsonResponse(REQUISICAO_OK)
             except:
                 return JsonResponse(erro('Erro na requisição. Professor(a) não encontrado(a).'))
         except:
@@ -412,7 +422,7 @@ def getPerguntasPorMateria(request):
 
             try:
                 materia = Materia.objects.get(id=codigo_materia)
-                perguntas = materia.perguntas.all()
+                perguntas = materia.perguntas.all().order_by('data_aproximada')
 
                 return JsonResponse(dicionario_perguntas(perguntas))
             except:

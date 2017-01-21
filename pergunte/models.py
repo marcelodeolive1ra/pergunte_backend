@@ -26,6 +26,7 @@ class Pergunta(models.Model):
     texto_pergunta = models.TextField(verbose_name='texto da pergunta', blank=True)
     alternativas = models.ManyToManyField(Alternativa, verbose_name='alternativas', blank=True)
     disponivel = models.BooleanField(verbose_name='pergunta disponível?')
+    data_aproximada = models.DateField(blank=True)
 
 
 class Pessoa(models.Model):
