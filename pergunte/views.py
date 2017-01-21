@@ -29,6 +29,12 @@ def dicionario_aluno(aluno):
     }
 
 
+def dicionario_alunos(alunos):
+    return {
+        STATUS: OK,
+        'alunos': alunos
+    }
+
 def dicionario_professor(professor):
     return {
         STATUS: OK,
@@ -62,6 +68,8 @@ def dicionario_materias(materias):
         STATUS: OK,
         'materias': materias
     }
+
+
 
 
 @csrf_exempt
@@ -148,6 +156,26 @@ def getMaterias(request):
                 return getMateriasPorStatus(request, statusMateria=True)
         except:
             return JsonResponse(erro('Erro ao obter a lista de matérias.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getAlunosInscritosPorMateria(request):
+    if request.method == 'POST':
+        try:
+            codigoMateria = request.POST['codigo']
+
+            alunosInscritos = Materia.objects.get(id=codigoMateria).aluno_set.all().order_by('nome', 'sobrenome')
+
+            alunos = []
+
+            for aluno in alunosInscritos:
+                alunos.append(dicionario_aluno(aluno))
+
+            return JsonResponse(dicionario_alunos(alunos))
+        except:
+            return JsonResponse(erro('Erro ao obter lista de alunos inscritos nesta disciplina.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
