@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import datetime
 
+
 def index(request):
     return HttpResponse("Home")
 
@@ -14,11 +15,13 @@ DESCRICAO = 'descricao'
 REQUISICAO_GET = 'Requisição GET ao invés de requisição POST.'
 REQUISICAO_OK = {'status': 'ok'}
 
+
 def erro(mensagemDeErro):
     return {
         STATUS: ERRO,
         DESCRICAO: mensagemDeErro
     }
+
 
 def dicionario_aluno(aluno):
     return {
@@ -55,12 +58,7 @@ def dicionario_materia(materia):
         'turma': materia.turma,
         'nome_materia': materia.nomeDisciplina,
         'codigo_inscricao': materia.codigoInscricao,
-        'professor': {
-            'nome': materia.professor.nome,
-            'sobrenome': materia.professor.sobrenome,
-            'email': materia.professor.email,
-            'universidade': materia.professor.universidade
-        }
+        'professor': dicionario_professor(materia.professor)
     }
 
 
@@ -93,7 +91,14 @@ def dicionario_materias(materias):
 def dicionario_alternativa(alternativa):
     return {
         'letra': alternativa.letra,
-        'texto_alternativa': alternativa.textoAlternativa
+        'texto_alternativa': alternativa.textoAlternativa,
+    }
+
+def dicionario_alternativas(alternativas):
+    return {
+        STATUS: OK,
+        'alternativas': [dicionario_alternativa(alternativa) for alternativa in alternativas],
+        'alternativas_corretas': [alternativa.letra for alternativa in alternativas.filter(alternativaCorreta=True)]
     }
 
 
@@ -473,7 +478,24 @@ def getPerguntasPorProfessor(request):
                 })
 
             except:
-                return JsonResponse('Erro na requisição. Professor não encontrado.')
+                return JsonResponse(erro('Erro na requisição. Professor não encontrado.'))
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getAlternativasPorPergunta(request):
+    if request.method == 'POST':
+        try:
+            codigo_pergunta = request.POST['codigo']
+
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+
+            alternativas = pergunta.alternativas.all().order_by('letra')
+
+            return JsonResponse(dicionario_alternativas(alternativas))
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
     else:
