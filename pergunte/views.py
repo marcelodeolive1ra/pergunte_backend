@@ -66,7 +66,6 @@ def dicionario_materia(materia):
 
 def dicionario_materias_sem_professor(materia, perguntas):
     materia_sem_professor = {
-        STATUS: OK,
         'codigo': materia.id,
         'ano': materia.ano,
         'semestre': materia.semestre,
@@ -93,7 +92,6 @@ def dicionario_materias(materias):
 
 def dicionario_alternativa(alternativa):
     return {
-        STATUS: OK,
         'letra': alternativa.letra,
         'texto_alternativa': alternativa.textoAlternativa
     }
@@ -101,19 +99,17 @@ def dicionario_alternativa(alternativa):
 
 def dicionario_pergunta(pergunta):
     return {
-        STATUS: OK,
         'codigo': pergunta.id,
         'titulo': pergunta.titulo,
         'texto_pergunta': pergunta.texto_pergunta,
-        'alternativas': [dicionario_alternativa(alternativa) for alternativa in pergunta.alternativas.all()],
-        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(alternativaCorreta=True)],
+        'alternativas': [dicionario_alternativa(alternativa) for alternativa in pergunta.alternativas.all().order_by('letra')],
+        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(alternativaCorreta=True).order_by('letra')],
         'data_aproximada': pergunta.data_aproximada
     }
 
 
 def dicionario_perguntas(perguntas):
     return {
-        # STATUS: OK,
         'perguntas': [dicionario_pergunta(pergunta) for pergunta in perguntas]
     }
 
@@ -462,16 +458,14 @@ def getPerguntasPorProfessor(request):
             try:
                 professor = Professor.objects.get(email=email)
 
-                materias = Materia.objects.filter(professor=professor).all()
+                materias = Materia.objects.filter(professor=professor).filter(materiaAtiva=True).\
+                    order_by('-ano', '-semestre', 'nomeDisciplina')
 
                 materias_perguntas = []
 
                 for materia in materias:
-                    dict = dicionario_materias_sem_professor(materia, dicionario_perguntas(materia.perguntas.all()))
-
-                    materias_perguntas.append({
-                        'materia': dict
-                    })
+                    materias_perguntas.append(dicionario_materias_sem_professor(materia,
+                        dicionario_perguntas(materia.perguntas.all().order_by('data_aproximada'))))
 
                 return JsonResponse({
                     STATUS: OK,
