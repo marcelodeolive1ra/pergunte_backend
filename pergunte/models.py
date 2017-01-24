@@ -7,11 +7,11 @@ class Alternativa(models.Model):
         verbose_name_plural = 'Alternativas'
 
     def __str__(self):
-        return '[Alternativa ' + self.letra + '] ' + self.textoAlternativa
+        return '[Alternativa ' + self.letra + '] ' + self.texto_alternativa
 
     letra = models.CharField(max_length=1, verbose_name='alternativa')
-    textoAlternativa = models.TextField(verbose_name='texto da alternativa', blank=True)
-    alternativaCorreta = models.BooleanField(verbose_name='alternativa correta?', default=False)
+    texto_alternativa = models.TextField(verbose_name='texto da alternativa', blank=True)
+    is_correta = models.BooleanField(verbose_name='alternativa correta?', default=False)
 
 
 class Pergunta(models.Model):
@@ -56,27 +56,39 @@ class Materia(models.Model):
         verbose_name_plural = 'matérias'
 
     def __str__(self):
-        return self.nomeDisciplina + ' (' + str(self.ano) + '/' + str(self.semestre) + ')'
+        return self.nome_materia + ' (' + str(self.ano) + '/' + str(self.semestre) + ')'
 
     ano = models.IntegerField(verbose_name='ano')
     semestre = models.IntegerField(verbose_name='semestre')
     turma = models.CharField(max_length=1, verbose_name='turma')
-    nomeDisciplina = models.CharField(max_length=200, verbose_name='nome da disciplina')
-    codigoInscricao = models.CharField(max_length=30, verbose_name='código de inscrição', unique=True)
+    nome_materia = models.CharField(max_length=200, verbose_name='nome da matéria')
+    codigo_inscricao = models.CharField(max_length=30, verbose_name='código de inscrição', unique=True)
     professor = models.ForeignKey(Professor, verbose_name='professor(a)')
     perguntas = models.ManyToManyField(Pergunta, verbose_name='perguntas', blank=True)
     materiaAtiva = models.BooleanField(verbose_name='matéria ativa?', default=True)
 
 
-class Resposta(models.Model):
+class PerguntaRespondida(models.Model):
     class Meta:
-        verbose_name = 'resposta'
-        verbose_name_plural = 'respostas'
+        verbose_name = 'pergunta respondida'
+        verbose_name_plural = 'perguntas respondidas'
 
     def __str__(self):
-        return ""
+        return 'Pergunta respondida'
 
-    materia = models.ForeignKey(Materia, verbose_name='matéria')
+    pergunta = models.ForeignKey(Pergunta, verbose_name='pergunta')
+    respostas = models.ManyToManyField(Alternativa, verbose_name='respostas')
+
+
+class Curso(models.Model):
+    class Meta:
+        verbose_name = 'curso'
+        verbose_name_plural = 'cursos'
+
+    def __str__(self):
+        return self.nome_curso
+
+    nome_curso = models.CharField(max_length=100, verbose_name='curso')
 
 
 class Aluno(Pessoa):
@@ -87,6 +99,6 @@ class Aluno(Pessoa):
     def __str__(self):
         return '[Aluno] ' + self.nome + ' ' + self.sobrenome
 
-    curso = models.CharField(max_length=100, verbose_name='curso')
+    curso = models.ForeignKey(Curso, verbose_name='curso')
     materias = models.ManyToManyField(Materia, verbose_name='matérias inscritas', blank=True)
-    perguntas_respondidas = models.ManyToManyField(Resposta, verbose_name='perguntas respondidas', blank=True)
+    perguntas_respondidas = models.ManyToManyField(PerguntaRespondida, verbose_name='perguntas respondidas', blank=True)

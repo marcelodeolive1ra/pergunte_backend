@@ -29,7 +29,7 @@ def dicionario_aluno(aluno):
         'nome': aluno.nome,
         'sobrenome': aluno.sobrenome,
         'email': aluno.email,
-        'curso': aluno.curso
+        'curso': aluno.curso.nome_curso
     }
 
 
@@ -56,20 +56,20 @@ def dicionario_materia(materia):
         'ano': materia.ano,
         'semestre': materia.semestre,
         'turma': materia.turma,
-        'nome_materia': materia.nomeDisciplina,
-        'codigo_inscricao': materia.codigoInscricao,
+        'nome_materia': materia.nome_materia,
+        'codigo_inscricao': materia.codigo_inscricao,
         'professor': dicionario_professor(materia.professor)
     }
 
 
-def dicionario_materias_sem_professor(materia, perguntas):
+def dicionario_materias_com_perguntas_sem_professor(materia, perguntas):
     materia_sem_professor = {
         'codigo': materia.id,
         'ano': materia.ano,
         'semestre': materia.semestre,
         'turma': materia.turma,
-        'nome_materia': materia.nomeDisciplina,
-        'codigo_inscricao': materia.codigoInscricao,
+        'nome_materia': materia.nome_materia,
+        'codigo_inscricao': materia.codigo_inscricao,
         'perguntas': perguntas
     }
 
@@ -91,14 +91,14 @@ def dicionario_materias(materias):
 def dicionario_alternativa(alternativa):
     return {
         'letra': alternativa.letra,
-        'texto_alternativa': alternativa.textoAlternativa,
+        'texto_alternativa': alternativa.texto_alternativa,
     }
 
 def dicionario_alternativas(alternativas):
     return {
         STATUS: OK,
         'alternativas': [dicionario_alternativa(alternativa) for alternativa in alternativas],
-        'alternativas_corretas': [alternativa.letra for alternativa in alternativas.filter(alternativaCorreta=True)]
+        'alternativas_corretas': [alternativa.letra for alternativa in alternativas.filter(is_correta=True)]
     }
 
 
@@ -108,7 +108,7 @@ def dicionario_pergunta(pergunta):
         'titulo': pergunta.titulo,
         'texto_pergunta': pergunta.texto_pergunta,
         'alternativas': [dicionario_alternativa(alternativa) for alternativa in pergunta.alternativas.all().order_by('letra')],
-        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(alternativaCorreta=True).order_by('letra')],
+        'alternativas_corretas': [alternativa.letra for alternativa in pergunta.alternativas.filter(is_correta=True).order_by('letra')],
         'data_aproximada': pergunta.data_aproximada
     }
 
@@ -159,6 +159,9 @@ def cadastrarAluno(request):
                 nome = request.POST['nome']
                 sobrenome = request.POST['sobrenome']
                 curso = request.POST['curso']
+
+                curso = Curso(nome_curso=curso)
+
                 aluno = Aluno(nome=nome, sobrenome=sobrenome, email=email, curso=curso)
                 aluno.save()
                 return JsonResponse(dicionario_aluno(aluno))
@@ -239,11 +242,11 @@ def getMateriasPorStatus(request, statusMateria):
             if tipoUsuario == 'aluno':
                 aluno = Aluno.objects.get(email=email)
                 materias_encontradas = aluno.materias.filter(materiaAtiva=statusMateria). \
-                    order_by('-ano', '-semestre', 'nomeDisciplina')
+                    order_by('-ano', '-semestre', 'nome_materia')
             else:
                 professor = Professor.objects.get(email=email)
                 materias_encontradas = Materia.objects.filter(professor=professor).filter(materiaAtiva=statusMateria). \
-                    order_by('-ano', '-semestre', 'nomeDisciplina')
+                    order_by('-ano', '-semestre', 'nome_materia')
 
             for materia in materias_encontradas:
                 materias.append(dicionario_materia(materia))
@@ -262,12 +265,12 @@ def getMateriaPorQRCode(request):
             codigo = request.POST['codigo']
             email_aluno = request.POST['email']
             aluno = Aluno.objects.get(email=email_aluno)
-            inscricaoJaExistente = True if len(aluno.materias.filter(codigoInscricao=codigo)) > 0 else False
+            inscricaoJaExistente = True if len(aluno.materias.filter(codigo_inscricao=codigo)) > 0 else False
 
             if inscricaoJaExistente:
                 return JsonResponse(erro('Aluno já inscrito nesta matéria.'))
             else:
-                materia = Materia.objects.filter(codigoInscricao=codigo)
+                materia = Materia.objects.filter(codigo_inscricao=codigo)
 
                 materiaExistente = True if len(materia) > 0 else False
 
@@ -293,14 +296,14 @@ def cadastrarMateria(request):
             ano = request.POST['ano']
             semestre = request.POST['semestre']
             turma = request.POST['turma']
-            nomeDisciplina = request.POST['nome_materia']
-            codigoInscricao = request.POST['codigo_inscricao']
+            nome_disciplina = request.POST['nome_materia']
+            codigo_inscricao = request.POST['codigo_inscricao']
             emailProfessor = request.POST['email']
 
             try:
                 professor = Professor.objects.get(email=emailProfessor)
-                nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nomeDisciplina=nomeDisciplina,
-                                       codigoInscricao=codigoInscricao, professor=professor)
+                nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nome_materia=nome_disciplina,
+                                       codigo_inscricao=codigo_inscricao, professor=professor)
                 nova_materia.save()
                 return JsonResponse(dicionario_materia(nova_materia))
             except:
@@ -335,7 +338,7 @@ def inscreverAlunoEmMateria(request):
             email_aluno = request.POST['email']
             codigo_inscricao = request.POST['codigo']
             aluno = Aluno.objects.get(email=email_aluno)
-            materia = Materia.objects.get(codigoInscricao=codigo_inscricao)
+            materia = Materia.objects.get(codigo_inscricao=codigo_inscricao)
 
             if materia.materiaAtiva:
                 aluno.materias.add(materia)
@@ -416,7 +419,8 @@ def cadastrarPergunta(request):
                         texto_alternativa = request.POST['alternativa' + str(i) + '_texto_alternativa']
                         alternativa_correta = True if request.POST['alternativa' + str(i) + '_correta'] == 'true' else False
 
-                        alternativa = Alternativa(letra=letra_alternativa, textoAlternativa=texto_alternativa, alternativaCorreta=alternativa_correta)
+                        alternativa = Alternativa(letra=letra_alternativa, texto_alternativa=texto_alternativa,
+                                                  is_correta=alternativa_correta)
                         alternativa.save()
                         pergunta.alternativas.add(alternativa)
                         pergunta.save()
@@ -464,13 +468,13 @@ def getPerguntasPorProfessor(request):
                 professor = Professor.objects.get(email=email)
 
                 materias = Materia.objects.filter(professor=professor).filter(materiaAtiva=True).\
-                    order_by('-ano', '-semestre', 'nomeDisciplina')
+                    order_by('-ano', '-semestre', 'nome_materia')
 
                 materias_perguntas = []
 
                 for materia in materias:
-                    materias_perguntas.append(dicionario_materias_sem_professor(materia,
-                        dicionario_perguntas(materia.perguntas.all().order_by('data_aproximada'))))
+                    materias_perguntas.append(dicionario_materias_com_perguntas_sem_professor(materia,
+                                                                                              dicionario_perguntas(materia.perguntas.all().order_by('data_aproximada'))))
 
                 return JsonResponse({
                     STATUS: OK,
@@ -496,6 +500,56 @@ def getAlternativasPorPergunta(request):
             alternativas = pergunta.alternativas.all().order_by('letra')
 
             return JsonResponse(dicionario_alternativas(alternativas))
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getRespostasPorPergunta(request):
+    if request.method == 'POST':
+        try:
+            email = request.POST['email']
+            aluno = Aluno.objects.get(email=email)
+            perguntas_respondidas = []
+
+            for pergunta_respondida in aluno.perguntas_respondidas.all():
+                perguntas_respondidas.append({
+                    'pergunta': pergunta_respondida.pergunta.id,
+                    'respostas': [alternativa.letra for alternativa in pergunta_respondida.respostas.all()]
+                })
+
+            return JsonResponse({
+                STATUS: OK,
+                'perguntas_respondidas': perguntas_respondidas
+            })
+
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getQuantidadeDeRespostasPorAlternativaPorPergunta(request):
+    if request.method == 'POST':
+        try:
+            codigo_pergunta = request.POST['codigo']
+
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+            quantidade_respostas = []
+
+            for alternativa in pergunta.alternativas.all():
+
+                q = PerguntaRespondida.objects.filter(respostas=alternativa).count()
+                quantidade_respostas.append({'alternativa': alternativa.letra, 'quantidade_respostas': q})
+
+            return JsonResponse({
+                STATUS: OK,
+                'pergunta': pergunta.id,
+                'quantidade_respostas': quantidade_respostas
+            })
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
     else:
