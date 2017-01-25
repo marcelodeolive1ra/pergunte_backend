@@ -1,0 +1,4 @@
+django
+pyqrcode
+pypng
+sendgrid
