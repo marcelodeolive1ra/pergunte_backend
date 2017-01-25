@@ -3,6 +3,11 @@ from django.http import JsonResponse
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import datetime
+from pyqrcode import QRCode
+import sendgrid
+from sendgrid.helpers.mail import *
+from django.conf import settings
+import base64
 
 
 def index(request):
@@ -573,6 +578,88 @@ def getQuantidadeDeRespostasTotaisPorPergunta(request):
                 'pergunta': pergunta.id,
                 'quantidade_respostas_total': quantidade_respostas
             })
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def enviarQRCodePorEmail(request):
+
+    if request.method == 'POST':
+        try:
+            codigo_materia = request.POST['codigo']
+            email_professor = request.POST['email']
+
+            try:
+
+                professor = Professor.objects.get(email=email_professor)
+                materia = Materia.objects.get(id=codigo_materia)
+
+                try:
+                    qr_code = QRCode(materia.codigo_inscricao)
+                    qr_code.png(file=settings.BASE_DIR + '/pergunte/static/pergunte/code.png', scale=5)
+
+                    try:
+                        sg = sendgrid.SendGridAPIClient(apikey=settings.SENDGRID_API_KEY)
+
+                        from_email = Email(professor.nome + ' ' + professor.sobrenome + '<' + professor.email + '>')
+                        subject = 'QRCode da matéria "' + materia.nome_materia + '"'
+
+                        conteudo_do_email = """
+                        <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+                        <html>
+                        <head>
+                            <meta charset="utf-8"/>
+                            <title>QR Code da matéria #NOMEMATERIA</title>
+                        </head>
+                        <body>
+                            <h1>QR Code da matéria "#NOMEMATERIA"</h1>
+                            <p>Olá professor(a) #NOME!</p>
+                            <p>Segue em anexo o QR code com o código <b>#CODIGO</b> referente à matéria <b>#NOMEMATERIA</b>,
+                            como solicitado pelo app Pergunte.</p>
+                        </body>
+                        </html>
+                        """
+
+                        conteudo_do_email = conteudo_do_email.replace('#NOMEMATERIA', materia.nome_materia)
+                        conteudo_do_email = conteudo_do_email.replace('#NOME', professor.nome)
+                        conteudo_do_email = conteudo_do_email.replace('#CODIGO', materia.codigo_inscricao)
+
+                        content = Content('text/html', conteudo_do_email)
+
+                        ready_mail = Mail(from_email, subject, from_email, content)
+
+                        anexo = Attachment()
+
+                        with open(settings.BASE_DIR + '/pergunte/static/pergunte/code.png', 'rb') as f:
+                            data = f.read()
+                            f.close()
+
+                        encoded = base64.b64encode(data).decode('UTF-8')
+
+                        anexo.set_content(encoded)
+                        anexo.set_type("image/png")
+                        anexo.set_filename('code.png')
+                        anexo.set_disposition("inline")
+                        anexo.set_content_id("QRCode")
+                        ready_mail.add_attachment(anexo)
+
+                        response = sg.client.mail.send.post(request_body=ready_mail.get())
+
+                        if response.status_code >= 200 and response.status_code < 300:
+                            return JsonResponse({
+                                STATUS: OK
+                            })
+                        else:
+                            return JsonResponse(erro('Erro de conexão com a API de envio de e-mail.'))
+                    except:
+                        return JsonResponse(erro('Erro no envio do e-mail.'))
+                except:
+                    return JsonResponse(erro('Erro na geração do QR code.'))
+            except:
+                return JsonResponse(erro('Erro na requisição. Professor ou matéria inválidos.'))
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
     else:

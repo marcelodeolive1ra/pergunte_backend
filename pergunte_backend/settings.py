@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['mds.secompufscar.com.br', '127.0.0.1']
 
+with open(BASE_DIR + '/api_keys/sendgrid.txt') as f:
+    SENDGRID_API_KEY = f.read().strip()
 
 # Application definition
 

@@ -23,5 +23,6 @@ urlpatterns = [
     url(r'^buscarquantidadederespostasporalternativaporpergunta/$', getQuantidadeDeRespostasPorAlternativaPorPergunta,
         name='buscarquantidadederespostasporalternativaporpergunta'),
     url(r'^buscarquantidadetotalderespostasporpergunta/$', getQuantidadeDeRespostasTotaisPorPergunta,
-        name='buscarquantidadetotalderespostasporpergunta')
+        name='buscarquantidadetotalderespostasporpergunta'),
+    url(r'^enviarqrcodeporemail/$', enviarQRCodePorEmail, name='enviarqrcodeporemail'),
 ]
