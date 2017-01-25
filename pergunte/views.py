@@ -540,7 +540,7 @@ def getQuantidadeDeRespostasPorAlternativaPorPergunta(request):
             pergunta = Pergunta.objects.get(id=codigo_pergunta)
             quantidade_respostas = []
 
-            for alternativa in pergunta.alternativas.all():
+            for alternativa in pergunta.alternativas.all().order_by('letra'):
 
                 q = PerguntaRespondida.objects.filter(respostas=alternativa).count()
                 quantidade_respostas.append({'alternativa': alternativa.letra, 'quantidade_respostas': q})
@@ -549,6 +549,29 @@ def getQuantidadeDeRespostasPorAlternativaPorPergunta(request):
                 STATUS: OK,
                 'pergunta': pergunta.id,
                 'quantidade_respostas': quantidade_respostas
+            })
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getQuantidadeDeRespostasTotaisPorPergunta(request):
+    if request.method == 'POST':
+        try:
+            codigo_pergunta = request.POST['codigo']
+
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+            quantidade_respostas = 0
+
+            for alternativa in pergunta.alternativas.all():
+                quantidade_respostas += PerguntaRespondida.objects.filter(respostas=alternativa).count()
+
+            return JsonResponse({
+                STATUS: OK,
+                'pergunta': pergunta.id,
+                'quantidade_respostas_total': quantidade_respostas
             })
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
