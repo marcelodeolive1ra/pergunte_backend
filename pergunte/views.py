@@ -269,27 +269,31 @@ def getMateriaPorQRCode(request):
         try:
             codigo = request.POST['codigo']
             email_aluno = request.POST['email']
-            aluno = Aluno.objects.get(email=email_aluno)
-            inscricaoJaExistente = True if len(aluno.materias.filter(codigo_inscricao=codigo)) > 0 else False
+            try:
+                aluno = Aluno.objects.get(email=email_aluno)
 
-            if inscricaoJaExistente:
-                return JsonResponse(erro('Aluno já inscrito nesta matéria.'))
-            else:
-                materia = Materia.objects.filter(codigo_inscricao=codigo)
+                try:
+                    inscricao_ja_existente = aluno.materias.get(codigo_inscricao=codigo)
+                    inscricao_ja_existente = True
+                except:
+                    inscricao_ja_existente = False
 
-                materiaExistente = True if len(materia) > 0 else False
-
-                if materiaExistente:
-                    materia = materia[0]
-
-                    if materia.materiaAtiva:
-                        return JsonResponse(dicionario_materia(materia))
-                    else:
-                        return JsonResponse(erro('Esta matéria está atualmente inativa.'))
+                if inscricao_ja_existente:
+                    return JsonResponse(erro('Aluno já inscrito nesta matéria.'))
                 else:
-                    return JsonResponse(erro('O código deste QR não foi encontrado no cadastro de matérias.'))
+                    try:
+                        materia = Materia.objects.get(codigo_inscricao=codigo)
+
+                        if materia.materiaAtiva:
+                            return JsonResponse(dicionario_materia(materia))
+                        else:
+                            return JsonResponse(erro('Esta matéria está atualmente inativa.'))
+                    except:
+                        return JsonResponse(erro('O código deste QR não foi encontrado no cadastro de matérias.'))
+            except:
+                return JsonResponse(erro('Aluno não cadastrado.'))
         except:
-            return JsonResponse(erro('Erro na requisição.'))
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
@@ -307,14 +311,17 @@ def cadastrarMateria(request):
 
             try:
                 professor = Professor.objects.get(email=emailProfessor)
-                nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nome_materia=nome_disciplina,
-                                       codigo_inscricao=codigo_inscricao, professor=professor)
-                nova_materia.save()
-                return JsonResponse(dicionario_materia(nova_materia))
+                try:
+                    nova_materia = Materia(ano=ano, semestre=semestre, turma=turma, nome_materia=nome_disciplina,
+                                           codigo_inscricao=codigo_inscricao, professor=professor)
+                    nova_materia.save()
+                    return JsonResponse(dicionario_materia(nova_materia))
+                except:
+                    return JsonResponse(erro('Código de inscrição já cadastrado para outra matéria.'))
             except:
                 return JsonResponse(erro('Professor não cadastrado.'))
         except:
-            return JsonResponse(erro('Erro na requisição.'))
+            return JsonResponse(erro('Parâmetros inválidos.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
