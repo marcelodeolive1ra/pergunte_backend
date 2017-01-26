@@ -30,7 +30,6 @@ def erro(mensagemDeErro):
 
 def dicionario_aluno(aluno):
     return {
-        STATUS: OK,
         'nome': aluno.nome,
         'sobrenome': aluno.sobrenome,
         'email': aluno.email,
@@ -38,10 +37,11 @@ def dicionario_aluno(aluno):
     }
 
 
-def dicionario_alunos(alunos):
+def dicionario_alunos(alunos, materia):
     return {
         STATUS: OK,
-        'alunos': alunos
+        'materia': materia.id,
+        'alunos': [dicionario_aluno(aluno) for aluno in alunos]
     }
 
 def dicionario_professor(professor):
@@ -660,6 +660,21 @@ def enviarQRCodePorEmail(request):
                     return JsonResponse(erro('Erro na geração do QR code.'))
             except:
                 return JsonResponse(erro('Erro na requisição. Professor ou matéria inválidos.'))
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getAlunosInscritosPorMateria(request):
+    if request.method == 'POST':
+        try:
+            codigo_materia = request.POST['codigo']
+            materia = Materia.objects.get(id=codigo_materia)
+            alunos = Aluno.objects.filter(materias=materia).order_by('nome', 'sobrenome')
+
+            return JsonResponse(dicionario_alunos(alunos, materia))
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
     else:
