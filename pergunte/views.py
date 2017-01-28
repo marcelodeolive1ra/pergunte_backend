@@ -19,6 +19,7 @@ STATUS = 'status'
 DESCRICAO = 'descricao'
 REQUISICAO_GET = 'Requisição GET ao invés de requisição POST.'
 REQUISICAO_OK = {'status': 'ok'}
+ERRO_PARAMETROS_INVALIDOS = 'Erro na requisição. Parâmetros inválidos.'
 
 
 def erro(mensagemDeErro):
@@ -120,6 +121,7 @@ def dicionario_pergunta(pergunta):
 
 def dicionario_perguntas(perguntas):
     return {
+        STATUS: OK,
         'perguntas': [dicionario_pergunta(pergunta) for pergunta in perguntas]
     }
 
@@ -129,6 +131,11 @@ def getAluno(request):
     if request.method == 'POST':
         try:
             email = request.POST['email']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            # TODO: adicionar status OK no dicionário
             aluno = Aluno.objects.get(email=email)
             return JsonResponse(dicionario_aluno(aluno))
         except:
@@ -142,10 +149,14 @@ def getProfessor(request):
     if request.method == 'POST':
         try:
             email = request.POST['email']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
             professor = Professor.objects.get(email=email)
             return JsonResponse(dicionario_professor(professor))
         except:
-            return JsonResponse(erro("Não foi encontrado professor com o e-mail informado."))
+            return JsonResponse(erro("Professor não encontrado com o e-mail cadastrado."))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
@@ -155,23 +166,24 @@ def cadastrarAluno(request):
     if request.method == 'POST':
         try:
             email = request.POST['email']
+            nome = request.POST['nome']
+            sobrenome = request.POST['sobrenome']
+            curso = request.POST['curso']
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
 
-            alunoJaExistente = True if len(Aluno.objects.filter(email=email)) > 0 else False
+        try:
+            aluno_ja_existente = True if len(Aluno.objects.filter(email=email)) > 0 else False
 
-            if alunoJaExistente:
+            if aluno_ja_existente:
                 return JsonResponse(erro('Aluno com e-mail ' + email + 'já cadastrado.'))
             else:
-                nome = request.POST['nome']
-                sobrenome = request.POST['sobrenome']
-                curso = request.POST['curso']
-
                 curso = Curso(nome_curso=curso)
-
                 aluno = Aluno(nome=nome, sobrenome=sobrenome, email=email, curso=curso)
                 aluno.save()
                 return JsonResponse(dicionario_aluno(aluno))
         except:
-            return JsonResponse(erro('Não foi possível cadastrar o aluno.'))
+            return JsonResponse(erro('Erro ao cadastrar aluno.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
@@ -181,20 +193,23 @@ def cadastrarProfessor(request):
     if request.method == 'POST':
         try:
             email = request.POST['email']
+            nome = request.POST['nome']
+            sobrenome = request.POST['sobrenome']
+            universidade = request.POST['universidade']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
 
-            professorJaExistente = True if len(Professor.objects.filter(email=email)) > 0 else False
+        try:
+            professor_ja_existente = True if len(Professor.objects.filter(email=email)) > 0 else False
 
-            if professorJaExistente:
+            if professor_ja_existente:
                 return JsonResponse(erro('Professor com e-mail ' + email + 'já cadastrado.'))
             else:
-                nome = request.POST['nome']
-                sobrenome = request.POST['sobrenome']
-                universidade = request.POST['universidade']
                 professor = Professor(nome=nome, sobrenome=sobrenome, email=email, universidade=universidade)
                 professor.save()
                 return JsonResponse(dicionario_professor(professor))
         except:
-            return JsonResponse(erro('Não foi possível cadastrar o professor.'))
+            return JsonResponse(erro('Erro ao cadastrar professor.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
@@ -203,12 +218,15 @@ def cadastrarProfessor(request):
 def getMaterias(request):
     if request.method == 'POST':
         try:
-            statusMateria = request.POST['status_materia']
+            status_materia = request.POST['status_materia']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
 
-            if statusMateria == 'inativa':
-                return getMateriasPorStatus(request, statusMateria=False)
+        try:
+            if status_materia == 'inativa':
+                return getMateriasPorStatus(request, status_materia=False)
             else:
-                return getMateriasPorStatus(request, statusMateria=True)
+                return getMateriasPorStatus(request, status_materia=True)
         except:
             return JsonResponse(erro('Erro ao obter a lista de matérias.'))
     else:
@@ -219,15 +237,19 @@ def getMaterias(request):
 def getAlunosInscritosPorMateria(request):
     if request.method == 'POST':
         try:
-            codigoMateria = request.POST['codigo']
+            codigo_materia = request.POST['codigo']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
 
-            alunosInscritos = Materia.objects.get(id=codigoMateria).aluno_set.all().order_by('nome', 'sobrenome')
+        try:
+            alunos_inscritos = Materia.objects.get(id=codigo_materia).aluno_set.all().order_by('nome', 'sobrenome')
 
             alunos = []
 
-            for aluno in alunosInscritos:
+            for aluno in alunos_inscritos:
                 alunos.append(dicionario_aluno(aluno))
 
+            # TODO: Corrigir a chamada para dicionario_alunos
             return JsonResponse(dicionario_alunos(alunos))
         except:
             return JsonResponse(erro('Erro ao obter lista de alunos inscritos nesta disciplina.'))
@@ -236,21 +258,25 @@ def getAlunosInscritosPorMateria(request):
 
 
 @csrf_exempt
-def getMateriasPorStatus(request, statusMateria):
+def getMateriasPorStatus(request, status_materia):
     if request.method == 'POST':
+        # TODO: Melhorar a identificação de perfil do usuário
         try:
             email = request.POST['email']
-            tipoUsuario = request.POST['tipo']
+            tipo_usuario = request.POST['tipo']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
 
+        try:
             materias = []
 
-            if tipoUsuario == 'aluno':
+            if tipo_usuario == 'aluno':
                 aluno = Aluno.objects.get(email=email)
-                materias_encontradas = aluno.materias.filter(materiaAtiva=statusMateria). \
+                materias_encontradas = aluno.materias.filter(materiaAtiva=status_materia). \
                     order_by('-ano', '-semestre', 'nome_materia')
             else:
                 professor = Professor.objects.get(email=email)
-                materias_encontradas = Materia.objects.filter(professor=professor).filter(materiaAtiva=statusMateria). \
+                materias_encontradas = Materia.objects.filter(professor=professor).filter(materiaAtiva=status_materia). \
                     order_by('-ano', '-semestre', 'nome_materia')
 
             for materia in materias_encontradas:
@@ -262,7 +288,7 @@ def getMateriasPorStatus(request, statusMateria):
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
-
+# TODO: Continuar revisão a partir daqui
 @csrf_exempt
 def getMateriaPorQRCode(request):
     if request.method == 'POST':
@@ -684,5 +710,81 @@ def getAlunosInscritosPorMateria(request):
             return JsonResponse(dicionario_alunos(alunos, materia))
         except:
             return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getPerguntasAtivasPorMateria(request):
+    if request.method == 'POST':
+        try:
+            codigo_materia = request.POST['codigo']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            materia = Materia.objects.get(id=codigo_materia)
+            perguntas = materia.perguntas.filter(disponivel=True)
+
+            return JsonResponse(dicionario_perguntas(perguntas))
+        except:
+            return JsonResponse(erro('Erro na requisição. Matéria não encontrada.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getProximasPerguntasPorMateria(request):
+    if request.method == 'POST':
+        try:
+            data = request.POST['data']
+            codigo_materia = request.POST['codigo']
+
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            dia = int(data[0:2])
+            mes = int(data[3:5])
+            ano = int(data[6:])
+
+            data = datetime.date(ano, mes, dia)
+
+            materia = Materia.objects.get(id=codigo_materia)
+
+            perguntas = []
+            for pergunta in materia.perguntas.filter(data_aproximada__gte=data).order_by('data_aproximada', 'titulo'):
+                perguntas.append(pergunta)
+
+            return JsonResponse(dicionario_perguntas(perguntas))
+
+        except:
+            return JsonResponse(erro('Erro na requisição.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getPerguntasRespondidasPorMateria(request):
+    if request.method == 'POST':
+        try:
+            codigo_materia = request.POST['codigo']
+            email_usuario = request.POST['email']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            aluno = Aluno.objects.get(email=email_usuario)
+            materia = Materia.objects.get(id=codigo_materia)
+
+            perguntas_respondidas = PerguntaRespondida.objects.filter(aluno=aluno).filter(pergunta__materia=materia).\
+                order_by('-pergunta__data_aproximada', 'pergunta__titulo')
+
+            perguntas_respondidas = [Pergunta.objects.get(id=p.pergunta_id) for p in perguntas_respondidas]
+
+            return JsonResponse(dicionario_perguntas(perguntas_respondidas))
+
+        except:
+            return JsonResponse(erro('Erro na requisição'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))

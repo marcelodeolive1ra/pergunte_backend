@@ -26,4 +26,7 @@ urlpatterns = [
         name='buscarquantidadetotalderespostasporpergunta'),
     url(r'^enviarqrcodeporemail/$', enviarQRCodePorEmail, name='enviarqrcodeporemail'),
     url(r'^buscaralunosinscritospormateria/$', getAlunosInscritosPorMateria, name='buscaralunosinscritospormateria'),
+    url(r'^buscarperguntasativaspormateria/$', getPerguntasAtivasPorMateria, name='buscarperguntasativaspormateria'),
+    url(r'^buscarproximasperguntaspormateria/$', getProximasPerguntasPorMateria, name='buscarproximasperguntaspormateria'),
+    url(r'^buscarperguntasrespondidaspormateria/$', getPerguntasRespondidasPorMateria, name='buscarperguntasrespondidaspormateria'),
 ]
