@@ -77,7 +77,8 @@ class PerguntaRespondida(models.Model):
         return 'Pergunta respondida'
 
     pergunta = models.ForeignKey(Pergunta, verbose_name='pergunta')
-    respostas = models.ManyToManyField(Alternativa, verbose_name='respostas')
+    respostas = models.ManyToManyField(Alternativa, verbose_name='respostas', null=True, blank=True)
+    data_hora_resposta = models.DateTimeField(verbose_name='data/hora da resposta')
 
 
 class Curso(models.Model):

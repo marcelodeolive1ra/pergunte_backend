@@ -29,4 +29,7 @@ urlpatterns = [
     url(r'^buscarperguntasativaspormateria/$', getPerguntasAtivasPorMateria, name='buscarperguntasativaspormateria'),
     url(r'^buscarproximasperguntaspormateria/$', getProximasPerguntasPorMateria, name='buscarproximasperguntaspormateria'),
     url(r'^buscarperguntasrespondidaspormateria/$', getPerguntasRespondidasPorMateria, name='buscarperguntasrespondidaspormateria'),
+    url(r'^disponibilizarpergunta/$', disponibilizarPergunta, name='disponibilizarpergunta'),
+    url(r'^finalizarpergunta/$', finalizarPergunta, name='finalizarpergunta'),
+    url(r'^registrarresposta/$', registrarReposta, name='registrarresposta'),
 ]

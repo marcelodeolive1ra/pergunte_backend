@@ -96,6 +96,7 @@ def dicionario_materias(materias):
 
 def dicionario_alternativa(alternativa):
     return {
+        'codigo': alternativa.id,
         'letra': alternativa.letra,
         'texto_alternativa': alternativa.texto_alternativa,
     }
@@ -786,5 +787,86 @@ def getPerguntasRespondidasPorMateria(request):
 
         except:
             return JsonResponse(erro('Erro na requisição'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def disponibilizarPergunta(request):
+    if request.method == 'POST':
+        try:
+            codigo_pergunta = request.POST['codigo']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+            pergunta.disponivel = True
+            pergunta.save()
+
+            return JsonResponse(REQUISICAO_OK)
+        except:
+            return JsonResponse('Erro na requisição. Pergunta não encontrada.')
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def finalizarPergunta(request):
+    if request.method == 'POST':
+        try:
+            codigo_pergunta = request.POST['codigo']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+            pergunta.disponivel = False
+            pergunta.save()
+
+            return JsonResponse(REQUISICAO_OK)
+        except:
+            return JsonResponse('Erro na requisição. Pergunta não encontrada.')
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def registrarReposta(request):
+    if request.method == 'POST':
+        try:
+            email_aluno = request.POST['email']
+            codigo_pergunta = request.POST['codigo']
+            quantidade_alternativas = int(request.POST['quantidade_alternativas'])
+            alternativas = []
+
+            for i in range(0, quantidade_alternativas):
+                alternativas.append(request.POST['alternativa' + str(i) + '_codigo'])
+
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+
+        try:
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+
+            if not pergunta.disponivel:
+                return JsonResponse(erro('Erro ao registrar a resposta. Esta pergunta já não está mais disponível.'))
+            else:
+                aluno = Aluno.objects.get(email=email_aluno)
+                pergunta_respondida = PerguntaRespondida(pergunta=pergunta, data_hora_resposta=datetime.datetime.now())
+                pergunta_respondida.save()
+
+                for i in range(0, quantidade_alternativas):
+                    alternativa = Alternativa.objects.get(id=alternativas[i])
+                    pergunta_respondida.respostas.add(alternativa)
+
+                pergunta_respondida.save()
+                aluno.perguntas_respondidas.add(pergunta_respondida)
+                aluno.save()
+
+                return JsonResponse(REQUISICAO_OK)
+
+        except:
+            return JsonResponse(erro('Erro na requisição. Resposta não registrada.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
