@@ -546,7 +546,7 @@ def getAlternativasPorPergunta(request):
 
 
 @csrf_exempt
-def getRespostasPorPergunta(request):
+def getRespostasPorPerguntaPorAluno(request):
     if request.method == 'POST':
         try:
             email = request.POST['email']
@@ -604,6 +604,7 @@ def getQuantidadeDeRespostasTotaisPorPergunta(request):
             pergunta = Pergunta.objects.get(id=codigo_pergunta)
             quantidade_respostas = 0
 
+            # TODO: contar quantas pessoas responderam, não quantas alternativas
             for alternativa in pergunta.alternativas.all():
                 quantidade_respostas += PerguntaRespondida.objects.filter(respostas=alternativa).count()
 
@@ -727,6 +728,8 @@ def getPerguntasAtivasPorMateria(request):
             materia = Materia.objects.get(id=codigo_materia)
             perguntas = materia.perguntas.filter(disponivel=True)
 
+            # TODO: remover as perguntas já respondidas do retorno
+
             return JsonResponse(dicionario_perguntas(perguntas))
         except:
             return JsonResponse(erro('Erro na requisição. Matéria não encontrada.'))
@@ -754,6 +757,7 @@ def getProximasPerguntasPorMateria(request):
             materia = Materia.objects.get(id=codigo_materia)
 
             perguntas = []
+            # TODO: remover as perguntas já respondidas da lista de retorno
             for pergunta in materia.perguntas.filter(data_aproximada__gte=data).order_by('data_aproximada', 'titulo'):
                 perguntas.append(pergunta)
 
@@ -868,5 +872,42 @@ def registrarReposta(request):
 
         except:
             return JsonResponse(erro('Erro na requisição. Resposta não registrada.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+@csrf_exempt
+def getRespostasPorPergunta(request):
+    if request.method == 'POST':
+        try:
+            codigo_pergunta = request.POST['codigo']
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+
+        try:
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+            quantidade_alternativas = pergunta.alternativas.count()
+
+            quantidades_respostas = {}
+            if quantidade_alternativas == 1:
+                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0}
+            elif quantidade_alternativas == 2:
+                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0}
+            elif quantidade_alternativas == 3:
+                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0}
+            elif quantidade_alternativas == 4:
+                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0, 'D': 0}
+            elif quantidade_alternativas == 5:
+                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0}
+
+            respostas = PerguntaRespondida.objects.filter(pergunta=pergunta)
+
+            for resposta in respostas:
+                for alternativa in resposta.respostas.all():
+                    quantidades_respostas[alternativa.letra] += 1
+
+            return JsonResponse(quantidades_respostas)
+
+        except:
+            return JsonResponse(erro('Erro na requisição. Pergunta não encontrada.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))

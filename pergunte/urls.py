@@ -19,7 +19,7 @@ urlpatterns = [
     url(r'^buscarperguntaspormateria/$', getPerguntasPorMateria, name='buscarperguntaspormateria'),
     url(r'^buscarperguntasporprofessor/$', getPerguntasPorProfessor, name='buscarperguntasporprofessor'),
     url(r'^buscaralternativasporpergunta/$', getAlternativasPorPergunta, name='buscaralternativasporpergunta'),
-    url(r'^buscarrespostasporpergunta/$', getRespostasPorPergunta, name='buscarrespostasporaluno'),
+    url(r'^buscarrespostasporperguntaporaluno/$', getRespostasPorPerguntaPorAluno, name='buscarrespostasporperguntaporaluno'),
     url(r'^buscarquantidadederespostasporalternativaporpergunta/$', getQuantidadeDeRespostasPorAlternativaPorPergunta,
         name='buscarquantidadederespostasporalternativaporpergunta'),
     url(r'^buscarquantidadetotalderespostasporpergunta/$', getQuantidadeDeRespostasTotaisPorPergunta,
@@ -32,4 +32,5 @@ urlpatterns = [
     url(r'^disponibilizarpergunta/$', disponibilizarPergunta, name='disponibilizarpergunta'),
     url(r'^finalizarpergunta/$', finalizarPergunta, name='finalizarpergunta'),
     url(r'^registrarresposta/$', registrarReposta, name='registrarresposta'),
+    url(r'^buscarrespostasporpergunta/$', getRespostasPorPergunta, name='buscarrepostasporpergunta')
 ]
