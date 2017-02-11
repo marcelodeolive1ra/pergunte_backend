@@ -889,15 +889,15 @@ def getRespostasPorPergunta(request):
 
             quantidades_respostas = {}
             if quantidade_alternativas == 1:
-                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0}
+                quantidades_respostas = {STATUS: OK, 'quantidade_alternativas': quantidade_alternativas, 'pergunta': codigo_pergunta, 'A': 0}
             elif quantidade_alternativas == 2:
-                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0}
+                quantidades_respostas = {STATUS: OK, 'quantidade_alternativas': quantidade_alternativas, 'pergunta': codigo_pergunta, 'A': 0, 'B': 0}
             elif quantidade_alternativas == 3:
-                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0}
+                quantidades_respostas = {STATUS: OK, 'quantidade_alternativas': quantidade_alternativas, 'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0}
             elif quantidade_alternativas == 4:
-                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0, 'D': 0}
+                quantidades_respostas = {STATUS: OK, 'quantidade_alternativas': quantidade_alternativas, 'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0, 'D': 0}
             elif quantidade_alternativas == 5:
-                quantidades_respostas = {'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0}
+                quantidades_respostas = {STATUS: OK, 'quantidade_alternativas': quantidade_alternativas, 'pergunta': codigo_pergunta, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0}
 
             respostas = PerguntaRespondida.objects.filter(pergunta=pergunta)
 

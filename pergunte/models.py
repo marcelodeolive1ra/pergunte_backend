@@ -37,6 +37,7 @@ class Pessoa(models.Model):
     nome = models.CharField(max_length=50, verbose_name='nome')
     sobrenome = models.CharField(max_length=100, verbose_name='sobrenome')
     email = models.EmailField(verbose_name='e-mail')
+    firebase_user_id = models.CharField(max_length=100, verbose_name='Firebase ID', null=True) # null temporariamente
 
 
 class Professor(Pessoa):
@@ -77,7 +78,7 @@ class PerguntaRespondida(models.Model):
         return 'Pergunta respondida'
 
     pergunta = models.ForeignKey(Pergunta, verbose_name='pergunta')
-    respostas = models.ManyToManyField(Alternativa, verbose_name='respostas', null=True, blank=True)
+    respostas = models.ManyToManyField(Alternativa, verbose_name='respostas', blank=True)
     data_hora_resposta = models.DateTimeField(verbose_name='data/hora da resposta')
 
 
