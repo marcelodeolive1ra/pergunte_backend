@@ -911,3 +911,47 @@ def getRespostasPorPergunta(request):
             return JsonResponse(erro('Erro na requisição. Pergunta não encontrada.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def getEstatisticas(request):
+    if request.method == 'POST':
+        try:
+            email = request.POST['email']
+        except:
+            return JsonResponse(erro('Erro na requisição. Parâmetros inválidos.'))
+
+        try:
+            aluno = Aluno.objects.get(email=email)
+            perguntas_respondidas = PerguntaRespondida.objects.filter(aluno=aluno)
+
+            quantidade_perguntas_respondidas = len(perguntas_respondidas)
+
+            respondidas_corretamente = 0
+
+            for p in perguntas_respondidas:
+                respostas_do_aluno = p.respostas.all()
+                corretas_da_pergunta = p.pergunta.alternativas.filter(is_correta=True)
+
+                acertou = True
+                for r in respostas_do_aluno:
+                    if r not in corretas_da_pergunta:
+                        acertou = False
+
+                if acertou:
+                    respondidas_corretamente += 1
+
+            quantidade_materias_inscritas = aluno.materias.count()
+
+            return JsonResponse({
+                STATUS: OK,
+                'quantidade_perguntas_respondidas': quantidade_perguntas_respondidas,
+                'quantidade_materias_inscritas': quantidade_materias_inscritas,
+                'quantidade_perguntas_respondidas_corretamente': respondidas_corretamente
+            })
+
+        except:
+            return JsonResponse(erro('Erro na requisição. Aluno não encontrado.'))
+
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
