@@ -35,4 +35,5 @@ urlpatterns = [
     url(r'^buscarrespostasporpergunta/$', getRespostasPorPergunta, name='buscarrepostasporpergunta'),
     url(r'^buscarestatisticas/$', getEstatisticas, name='buscarestatisticas'),
     url(r'^enviarnotificacao/$', enviarNotificacao, name='enviarnotificacao'),
+    url(r'^setartokenefoto/$', setarTokenEFoto, name='setartoken'),
 ]

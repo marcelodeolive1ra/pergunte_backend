@@ -36,7 +36,8 @@ def dicionario_aluno(aluno):
         'nome': aluno.nome,
         'sobrenome': aluno.sobrenome,
         'email': aluno.email,
-        'curso': aluno.curso.nome_curso
+        'curso': aluno.curso.nome_curso,
+        'foto': aluno.foto_url
     }
 
 
@@ -46,6 +47,7 @@ def dicionario_alunos(alunos, materia):
         'materia': materia.id,
         'alunos': [dicionario_aluno(aluno) for aluno in alunos]
     }
+
 
 def dicionario_professor(professor):
     return {
@@ -245,6 +247,7 @@ def getAlunosInscritosPorMateria(request):
             return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
 
         try:
+            materia = Materia.objects.get(id=codigo_materia)
             alunos_inscritos = Materia.objects.get(id=codigo_materia).aluno_set.all().order_by('nome', 'sobrenome')
 
             alunos = []
@@ -253,7 +256,7 @@ def getAlunosInscritosPorMateria(request):
                 alunos.append(dicionario_aluno(aluno))
 
             # TODO: Corrigir a chamada para dicionario_alunos
-            return JsonResponse(dicionario_alunos(alunos))
+            return JsonResponse(dicionario_alunos(alunos, materia))
         except:
             return JsonResponse(erro('Erro ao obter lista de alunos inscritos nesta disciplina.'))
     else:
@@ -964,13 +967,14 @@ def getEstatisticas(request):
 def enviarNotificacao(request):
     if request.method == 'POST':
         try:
-            codigo_materia = request.POST['codigo']
+            codigo_pergunta = request.POST['codigo']
         except:
             return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
 
         try:
-            materia = Materia.objects.get(id=codigo_materia)
-            alunos_inscritos = Materia.objects.get(id=codigo_materia).aluno_set.all().order_by('nome', 'sobrenome')
+            pergunta = Pergunta.objects.get(id=codigo_pergunta)
+            materia = Materia.objects.get(perguntas=pergunta)
+            alunos_inscritos = materia.aluno_set.all().order_by('nome', 'sobrenome')
 
             url = 'https://fcm.googleapis.com/fcm/send'
             headers = {
@@ -993,5 +997,27 @@ def enviarNotificacao(request):
             return JsonResponse({STATUS: OK, 'quant': status})
         except:
             return JsonResponse(erro('Erro ao obter lista de alunos inscritos nesta disciplina.'))
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+def setarTokenEFoto(request):
+    if request.method == 'POST':
+        try:
+            email = request.POST['email']
+            token = request.POST['token']
+            foto_url = request.POST['foto']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            p = Pessoa.objects.get(email=email)
+            p.firebase_token = token
+            p.foto_url = foto_url
+            p.save()
+
+            return JsonResponse({STATUS: OK})
+        except:
+            return JsonResponse(erro('Erro na requisição. Usuário não encontrado.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))
