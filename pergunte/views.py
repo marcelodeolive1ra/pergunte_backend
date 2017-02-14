@@ -8,6 +8,7 @@ import sendgrid
 from sendgrid.helpers.mail import *
 from django.conf import settings
 import base64
+import requests
 
 
 def index(request):
@@ -31,6 +32,7 @@ def erro(mensagemDeErro):
 
 def dicionario_aluno(aluno):
     return {
+        STATUS: OK,
         'nome': aluno.nome,
         'sobrenome': aluno.sobrenome,
         'email': aluno.email,
@@ -875,6 +877,7 @@ def registrarReposta(request):
     else:
         return JsonResponse(erro(REQUISICAO_GET))
 
+
 @csrf_exempt
 def getRespostasPorPergunta(request):
     if request.method == 'POST':
@@ -953,5 +956,42 @@ def getEstatisticas(request):
         except:
             return JsonResponse(erro('Erro na requisição. Aluno não encontrado.'))
 
+    else:
+        return JsonResponse(erro(REQUISICAO_GET))
+
+
+@csrf_exempt
+def enviarNotificacao(request):
+    if request.method == 'POST':
+        try:
+            codigo_materia = request.POST['codigo']
+        except:
+            return JsonResponse(erro(ERRO_PARAMETROS_INVALIDOS))
+
+        try:
+            materia = Materia.objects.get(id=codigo_materia)
+            alunos_inscritos = Materia.objects.get(id=codigo_materia).aluno_set.all().order_by('nome', 'sobrenome')
+
+            url = 'https://fcm.googleapis.com/fcm/send'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': settings.FIREBASE_CLOUD_MESSAGING_KEY
+            }
+
+            status = 'nenhum'
+            for aluno in alunos_inscritos:
+                notificacao = {
+                    'to': aluno.firebase_token,
+                    'notification': {
+                        'title': 'Pergunte: nova pergunta ativa',
+                        'body': 'Uma nova pergunta está disponível para ser respondida na matéria ' +
+                                materia.nome_materia + '.'
+                    }
+                }
+                status = requests.post(url, headers=headers, json=notificacao)
+
+            return JsonResponse({STATUS: OK, 'quant': status})
+        except:
+            return JsonResponse(erro('Erro ao obter lista de alunos inscritos nesta disciplina.'))
     else:
         return JsonResponse(erro(REQUISICAO_GET))

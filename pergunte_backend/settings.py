@@ -30,6 +30,9 @@ ALLOWED_HOSTS = ['mds.secompufscar.com.br', '127.0.0.1']
 with open(BASE_DIR + '/api_keys/sendgrid.txt') as f:
     SENDGRID_API_KEY = f.read().strip()
 
+
+with open(BASE_DIR + '/api_keys/firebase_cloud_messaging.txt') as f:
+    FIREBASE_CLOUD_MESSAGING_KEY = f.read().strip()
 # Application definition
 
 INSTALLED_APPS = [

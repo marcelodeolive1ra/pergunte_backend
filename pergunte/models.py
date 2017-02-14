@@ -38,6 +38,7 @@ class Pessoa(models.Model):
     sobrenome = models.CharField(max_length=100, verbose_name='sobrenome')
     email = models.EmailField(verbose_name='e-mail')
     firebase_user_id = models.CharField(max_length=100, verbose_name='Firebase ID', null=True) # null temporariamente
+    firebase_token = models.CharField(max_length=250, verbose_name='Token Firebase', null=True, blank=True)
 
 
 class Professor(Pessoa):

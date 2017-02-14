@@ -33,5 +33,6 @@ urlpatterns = [
     url(r'^finalizarpergunta/$', finalizarPergunta, name='finalizarpergunta'),
     url(r'^registrarresposta/$', registrarReposta, name='registrarresposta'),
     url(r'^buscarrespostasporpergunta/$', getRespostasPorPergunta, name='buscarrepostasporpergunta'),
-    url(r'^buscarestatisticas/$', getEstatisticas, name='buscarestatisticas')
+    url(r'^buscarestatisticas/$', getEstatisticas, name='buscarestatisticas'),
+    url(r'^enviarnotificacao/$', enviarNotificacao, name='enviarnotificacao'),
 ]

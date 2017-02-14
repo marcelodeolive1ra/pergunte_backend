@@ -2,3 +2,4 @@ django
 pyqrcode
 pypng
 sendgrid
+requests
